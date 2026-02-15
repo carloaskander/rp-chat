@@ -1,0 +1,215 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+
+import { useLocalStorageState } from "@/hooks/use-local-storage-state";
+import { buildChatTitle, createEmptyChatSession, createId } from "@/lib/chat-utils";
+import {
+  DEFAULT_CHARACTER_PRESETS,
+  DEFAULT_CHAT_SESSIONS,
+  DEFAULT_INSTRUCTION_PRESETS,
+  DEFAULT_SETTINGS,
+} from "@/lib/mock-data";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { ChatMessage, Preset, SidebarView } from "@/types/chat";
+
+import { CharacterPresetSelector } from "./character-preset-selector";
+import { ChatPanel } from "./chat-panel";
+import { InstructionPresetSelector } from "./instruction-preset-selector";
+import { Sidebar } from "./sidebar";
+
+export function ChatApp() {
+  const [settings] = useLocalStorageState(STORAGE_KEYS.settings, DEFAULT_SETTINGS);
+  const [chats, setChats] = useLocalStorageState(STORAGE_KEYS.chats, DEFAULT_CHAT_SESSIONS);
+  const [activeChatId, setActiveChatId] = useLocalStorageState<string | null>(
+    STORAGE_KEYS.activeChatId,
+    DEFAULT_CHAT_SESSIONS[0]?.id ?? null,
+  );
+  const [instructionPresets, setInstructionPresets] = useLocalStorageState(
+    STORAGE_KEYS.instructionPresets,
+    DEFAULT_INSTRUCTION_PRESETS,
+  );
+  const [characterPresets, setCharacterPresets] = useLocalStorageState(
+    STORAGE_KEYS.characterPresets,
+    DEFAULT_CHARACTER_PRESETS,
+  );
+
+  const [activeView, setActiveView] = useState<SidebarView>("chat");
+
+  useEffect(() => {
+    if (chats.length === 0) {
+      const freshChat = createEmptyChatSession(1);
+      setChats([freshChat]);
+      setActiveChatId(freshChat.id);
+      return;
+    }
+
+    if (!activeChatId || !chats.some((chat) => chat.id === activeChatId)) {
+      setActiveChatId(chats[0].id);
+    }
+  }, [activeChatId, chats, setActiveChatId, setChats]);
+
+  const sortedChats = useMemo(
+    () => [...chats].sort((a, b) => b.updatedAt - a.updatedAt),
+    [chats],
+  );
+
+  const activeChat = chats.find((chat) => chat.id === activeChatId) ?? null;
+
+  const handleNewChat = () => {
+    const newChat = createEmptyChatSession(chats.length + 1);
+    setChats((prev) => [newChat, ...prev]);
+    setActiveChatId(newChat.id);
+    setActiveView("chat");
+  };
+
+  const handleSelectChat = (chatId: string) => {
+    setActiveChatId(chatId);
+    setActiveView("chat");
+  };
+
+  const handleSendMessage = (content: string) => {
+    if (!activeChatId) {
+      return;
+    }
+
+    const now = Date.now();
+
+    const userMessage: ChatMessage = {
+      id: createId(),
+      role: "user",
+      content,
+      createdAt: now,
+    };
+
+    const assistantMessage: ChatMessage = {
+      id: createId(),
+      role: "assistant",
+      content: `Mock reply (${settings.model}): ${content}`,
+      createdAt: now + 1,
+    };
+
+    setChats((prev) =>
+      prev.map((chat, index) => {
+        if (chat.id !== activeChatId) {
+          return chat;
+        }
+
+        const nextMessages = [...chat.messages, userMessage, assistantMessage];
+
+        return {
+          ...chat,
+          messages: nextMessages,
+          title: buildChatTitle(nextMessages, index + 1),
+          updatedAt: now,
+        };
+      }),
+    );
+  };
+
+  const createPresetHandlers = (
+    kind: "instruction" | "character",
+  ): {
+    presets: Preset[];
+    createPreset: (name: string, content: string) => void;
+    updatePreset: (presetId: string, updates: Partial<Preset>) => void;
+    deletePreset: (presetId: string) => void;
+  } => {
+    const presets = kind === "instruction" ? instructionPresets : characterPresets;
+    const setPresets =
+      kind === "instruction" ? setInstructionPresets : setCharacterPresets;
+
+    const createPreset = (name: string, content: string) => {
+      setPresets((prev) => [
+        {
+          id: createId(),
+          name,
+          content,
+        },
+        ...prev,
+      ]);
+    };
+
+    const updatePreset = (presetId: string, updates: Partial<Preset>) => {
+      setPresets((prev) =>
+        prev.map((preset) =>
+          preset.id === presetId ? { ...preset, ...updates } : preset,
+        ),
+      );
+    };
+
+    const deletePreset = (presetId: string) => {
+      setPresets((prev) => prev.filter((preset) => preset.id !== presetId));
+    };
+
+    return {
+      presets,
+      createPreset,
+      updatePreset,
+      deletePreset,
+    };
+  };
+
+  const instructionPresetHandlers = createPresetHandlers("instruction");
+  const characterPresetHandlers = createPresetHandlers("character");
+
+  return (
+    <main className="mx-auto flex h-screen w-full max-w-[1480px] flex-col px-3 py-4 sm:px-5 sm:py-5">
+      <header className="flex items-center justify-between px-5 py-3">
+        <div>
+          <h1 className="text-lg font-medium tracking-tight text-zinc-100">RP Chat MVP</h1>
+          <p className="text-xs text-zinc-400">
+            {settings.provider} - {settings.model}
+          </p>
+        </div>
+        <Link
+          href="/settings"
+          className="rounded-lg bg-zinc-800/80 px-3 py-1.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-700/80"
+        >
+          Settings
+        </Link>
+      </header>
+
+      <div className="mt-4 flex min-h-0 flex-1 gap-4 overflow-hidden">
+        <Sidebar
+          activeView={activeView}
+          chats={sortedChats}
+          activeChatId={activeChatId}
+          onNewChat={handleNewChat}
+          onViewChange={setActiveView}
+          onSelectChat={handleSelectChat}
+        />
+
+        <section className="min-h-0 flex-1">
+          {activeView === "chat" && (
+            <ChatPanel
+              chat={activeChat}
+              modelLabel={`${settings.provider} / ${settings.model}`}
+              onSendMessage={handleSendMessage}
+            />
+          )}
+
+          {activeView === "instructionPresets" && (
+            <InstructionPresetSelector
+              presets={instructionPresetHandlers.presets}
+              onCreatePreset={instructionPresetHandlers.createPreset}
+              onUpdatePreset={instructionPresetHandlers.updatePreset}
+              onDeletePreset={instructionPresetHandlers.deletePreset}
+            />
+          )}
+
+          {activeView === "characterPresets" && (
+            <CharacterPresetSelector
+              presets={characterPresetHandlers.presets}
+              onCreatePreset={characterPresetHandlers.createPreset}
+              onUpdatePreset={characterPresetHandlers.updatePreset}
+              onDeletePreset={characterPresetHandlers.deletePreset}
+            />
+          )}
+
+        </section>
+      </div>
+    </main>
+  );
+}
