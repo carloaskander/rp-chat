@@ -1,90 +1,74 @@
 "use client";
 
-import { ChangeEvent } from "react";
+import { useEffect, useState } from "react";
 
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
-import { DEFAULT_SETTINGS, PROVIDER_MODELS } from "@/lib/mock-data";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { ApiProfile, SettingsTab } from "@/types/settings";
+
+import { ApiProfileList } from "./api-profile-list";
+import { SettingsTabs } from "./settings-tabs";
 
 export function SettingsForm() {
-  const [settings, setSettings] = useLocalStorageState(
-    STORAGE_KEYS.settings,
-    DEFAULT_SETTINGS,
+  const [activeTab, setActiveTab] = useState<SettingsTab>("api");
+  const [profiles, setProfiles] = useLocalStorageState<ApiProfile[]>(
+    STORAGE_KEYS.apiProfiles,
+    [],
+  );
+  const [activeProfileId, setActiveProfileId] = useLocalStorageState<string | null>(
+    STORAGE_KEYS.activeApiProfileId,
+    null,
   );
 
-  const availableModels = PROVIDER_MODELS[settings.provider];
+  useEffect(() => {
+    if (profiles.length === 0) {
+      if (activeProfileId !== null) {
+        setActiveProfileId(null);
+      }
+      return;
+    }
 
-  const handleProviderChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const provider = event.target.value as keyof typeof PROVIDER_MODELS;
-    const nextModels = PROVIDER_MODELS[provider];
-
-    setSettings((prev) => ({
-      ...prev,
-      provider,
-      model: nextModels.includes(prev.model) ? prev.model : nextModels[0],
-    }));
-  };
+    if (!activeProfileId || !profiles.some((profile) => profile.id === activeProfileId)) {
+      setActiveProfileId(profiles[0].id);
+    }
+  }, [activeProfileId, profiles, setActiveProfileId]);
 
   return (
-    <section className="p-5 sm:p-6">
-      <div className="space-y-5">
-        <div>
-          <label className="mb-2 block text-sm font-medium text-zinc-200" htmlFor="api-key">
-            API Key
-          </label>
-          <input
-            id="api-key"
-            type="password"
-            value={settings.apiKey}
-            onChange={(event) =>
-              setSettings((prev) => ({ ...prev, apiKey: event.target.value }))
-            }
-            placeholder="Paste API key"
-            className="w-full rounded-xl bg-zinc-900/70 px-3 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
-          />
-          <p className="mt-2 text-xs text-zinc-500">
-            Stored locally in your browser for this MVP.
-          </p>
-        </div>
+    <section className="space-y-5">
+      <SettingsTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-        <div>
-          <label className="mb-2 block text-sm font-medium text-zinc-200" htmlFor="provider">
-            Provider
-          </label>
-          <select
-            id="provider"
-            value={settings.provider}
-            onChange={handleProviderChange}
-            className="w-full rounded-xl bg-zinc-900/70 px-3 py-2.5 text-sm text-zinc-100 outline-none"
-          >
-            {Object.keys(PROVIDER_MODELS).map((provider) => (
-              <option key={provider} value={provider}>
-                {provider}
-              </option>
-            ))}
-          </select>
-        </div>
+      {activeTab === "api" && (
+        <ApiProfileList
+          profiles={profiles}
+          activeProfileId={activeProfileId}
+          onChangeProfiles={setProfiles}
+          onChangeActiveProfileId={setActiveProfileId}
+        />
+      )}
 
-        <div>
-          <label className="mb-2 block text-sm font-medium text-zinc-200" htmlFor="model">
-            Model
-          </label>
-          <select
-            id="model"
-            value={settings.model}
-            onChange={(event) =>
-              setSettings((prev) => ({ ...prev, model: event.target.value }))
-            }
-            className="w-full rounded-xl bg-zinc-900/70 px-3 py-2.5 text-sm text-zinc-100 outline-none"
-          >
-            {availableModels.map((model) => (
-              <option key={model} value={model}>
-                {model}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      {activeTab === "appearance" && (
+        <section className="px-5 pb-6">
+          <div className="rounded-xl bg-zinc-900/60 p-4 text-sm text-zinc-400">
+            Appearance settings coming soon.
+          </div>
+        </section>
+      )}
+
+      {activeTab === "advanced" && (
+        <section className="px-5 pb-6">
+          <div className="rounded-xl bg-zinc-900/60 p-4 text-sm text-zinc-400">
+            Advanced settings coming soon.
+          </div>
+        </section>
+      )}
+
+      {activeTab === "about" && (
+        <section className="px-5 pb-6">
+          <div className="rounded-xl bg-zinc-900/60 p-4 text-sm text-zinc-400">
+            RP Chat MVP. Local-only settings, no backend/auth yet.
+          </div>
+        </section>
+      )}
     </section>
   );
 }
