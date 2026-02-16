@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
@@ -13,13 +14,16 @@ import {
 } from "@/lib/mock-data";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { ChatMessage, Preset, SidebarView } from "@/types/chat";
+import { ApiProfile } from "@/types/settings";
 
 import { CharacterPresetSelector } from "./character-preset-selector";
+import { ChatSettingsModal } from "./chat-settings-modal";
 import { ChatPanel } from "./chat-panel";
 import { InstructionPresetSelector } from "./instruction-preset-selector";
 import { Sidebar } from "./sidebar";
 
 export function ChatApp() {
+  const router = useRouter();
   const [settings] = useLocalStorageState(STORAGE_KEYS.settings, DEFAULT_SETTINGS);
   const [chats, setChats] = useLocalStorageState(STORAGE_KEYS.chats, DEFAULT_CHAT_SESSIONS);
   const [activeChatId, setActiveChatId] = useLocalStorageState<string | null>(
@@ -34,8 +38,37 @@ export function ChatApp() {
     STORAGE_KEYS.characterPresets,
     DEFAULT_CHARACTER_PRESETS,
   );
+  const [apiProfiles] = useLocalStorageState<ApiProfile[]>(STORAGE_KEYS.apiProfiles, []);
 
   const [activeView, setActiveView] = useState<SidebarView>("chat");
+  const [chatSettingsChatId, setChatSettingsChatId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setChats((prev) => {
+      let changed = false;
+      const normalized = prev.map((chat) => {
+        if (
+          chat.settingsConfigured === undefined ||
+          chat.apiProfileId === undefined ||
+          chat.characterPresetId === undefined ||
+          chat.instructionPresetId === undefined
+        ) {
+          changed = true;
+          return {
+            ...chat,
+            apiProfileId: chat.apiProfileId ?? null,
+            characterPresetId: chat.characterPresetId ?? null,
+            instructionPresetId: chat.instructionPresetId ?? null,
+            settingsConfigured:
+              chat.settingsConfigured ?? Boolean(chat.apiProfileId ?? null),
+          };
+        }
+        return chat;
+      });
+
+      return changed ? normalized : prev;
+    });
+  }, [setChats]);
 
   useEffect(() => {
     if (chats.length === 0) {
@@ -56,6 +89,25 @@ export function ChatApp() {
   );
 
   const activeChat = chats.find((chat) => chat.id === activeChatId) ?? null;
+  const activeChatApiProfile = apiProfiles.find(
+    (profile) => profile.id === activeChat?.apiProfileId,
+  );
+  const editingChat = chats.find((chat) => chat.id === chatSettingsChatId) ?? null;
+  const activeChatInputLocked = Boolean(activeChat && !activeChat.apiProfileId);
+  const hasApiProfiles = apiProfiles.length > 0;
+  const activeInstructionPreset = instructionPresets.find(
+    (preset) => preset.id === activeChat?.instructionPresetId,
+  );
+  const activeCharacterPreset = characterPresets.find(
+    (preset) => preset.id === activeChat?.characterPresetId,
+  );
+  const activeChatModelLabel = [
+    activeChatApiProfile
+      ? `${activeChatApiProfile.name} (${activeChatApiProfile.model || "Model not set"})`
+      : "No API profile selected",
+    activeInstructionPreset?.name ?? "No instruction preset",
+    activeCharacterPreset?.name ?? "No character preset",
+  ].join(" · ");
 
   const handleNewChat = () => {
     const newChat = createEmptyChatSession(chats.length + 1);
@@ -69,8 +121,54 @@ export function ChatApp() {
     setActiveView("chat");
   };
 
+  const handleDeleteChat = (chatId: string) => {
+    setChats((prev) => {
+      const nextChats = prev.filter((chat) => chat.id !== chatId);
+
+      if (nextChats.length === 0) {
+        const freshChat = createEmptyChatSession(1);
+        setActiveChatId(freshChat.id);
+        return [freshChat];
+      }
+
+      if (activeChatId === chatId) {
+        setActiveChatId(nextChats[0].id);
+      }
+
+      if (chatSettingsChatId === chatId) {
+        setChatSettingsChatId(null);
+      }
+
+      return nextChats;
+    });
+  };
+
+  const handleRenameChat = (chatId: string, title: string) => {
+    setChats((prev) =>
+      prev.map((chat) =>
+        chat.id === chatId
+          ? {
+              ...chat,
+              title,
+              updatedAt: Date.now(),
+            }
+          : chat,
+      ),
+    );
+  };
+
   const handleSendMessage = (content: string) => {
     if (!activeChatId) {
+      return;
+    }
+
+    const targetChat = chats.find((chat) => chat.id === activeChatId);
+    if (!targetChat || !targetChat.apiProfileId) {
+      if (!hasApiProfiles) {
+        router.push("/settings");
+        return;
+      }
+      setChatSettingsChatId(activeChatId);
       return;
     }
 
@@ -154,6 +252,38 @@ export function ChatApp() {
   const instructionPresetHandlers = createPresetHandlers("instruction");
   const characterPresetHandlers = createPresetHandlers("character");
 
+  const handleOpenChatSettings = (chatId: string) => {
+    if (!hasApiProfiles) {
+      router.push("/settings");
+      return;
+    }
+    setChatSettingsChatId(chatId);
+  };
+
+  const handleSaveChatSettings = (values: {
+    apiProfileId: string | null;
+    characterPresetId: string | null;
+    instructionPresetId: string | null;
+  }) => {
+    if (!chatSettingsChatId) {
+      return;
+    }
+
+    setChats((prev) =>
+      prev.map((chat) =>
+        chat.id === chatSettingsChatId
+          ? {
+              ...chat,
+              ...values,
+              settingsConfigured: Boolean(values.apiProfileId),
+              updatedAt: Date.now(),
+            }
+          : chat,
+      ),
+    );
+    setChatSettingsChatId(null);
+  };
+
   return (
     <main className="mx-auto flex h-screen w-full max-w-[1480px] flex-col px-3 py-4 sm:px-5 sm:py-5">
       <header className="flex items-center justify-between px-5 py-3">
@@ -179,14 +309,25 @@ export function ChatApp() {
           onNewChat={handleNewChat}
           onViewChange={setActiveView}
           onSelectChat={handleSelectChat}
+          onEditChatSettings={handleOpenChatSettings}
+          onDeleteChat={handleDeleteChat}
+          onRenameChat={handleRenameChat}
         />
 
         <section className="min-h-0 flex-1">
           {activeView === "chat" && (
             <ChatPanel
               chat={activeChat}
-              modelLabel={`${settings.provider} / ${settings.model}`}
+              modelLabel={activeChatModelLabel}
+              inputDisabled={activeChatInputLocked}
+              setupRequired={activeChatInputLocked}
+              hasApiProfiles={hasApiProfiles}
               onSendMessage={handleSendMessage}
+              onOpenChatSettings={() => {
+                if (activeChat) {
+                  handleOpenChatSettings(activeChat.id);
+                }
+              }}
             />
           )}
 
@@ -210,6 +351,22 @@ export function ChatApp() {
 
         </section>
       </div>
+
+      <ChatSettingsModal
+        key={editingChat?.id ?? "chat-settings"}
+        open={editingChat !== null}
+        title={editingChat?.apiProfileId ? "Edit Chat Settings" : "Set Up Chat"}
+        initialValues={{
+          apiProfileId: editingChat?.apiProfileId ?? null,
+          characterPresetId: editingChat?.characterPresetId ?? null,
+          instructionPresetId: editingChat?.instructionPresetId ?? null,
+        }}
+        apiProfiles={apiProfiles}
+        characterPresets={characterPresets}
+        instructionPresets={instructionPresets}
+        onSave={handleSaveChatSettings}
+        onCancel={() => setChatSettingsChatId(null)}
+      />
     </main>
   );
 }

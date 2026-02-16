@@ -34,6 +34,10 @@ export function createEmptyChatSession(index: number): ChatSession {
   return {
     id: createId(),
     title: `New Chat ${index}`,
+    apiProfileId: null,
+    characterPresetId: null,
+    instructionPresetId: null,
+    settingsConfigured: false,
     createdAt: now,
     updatedAt: now,
     messages: [],

@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 
 function resolveInitial<T>(initialValue: T | (() => T)): T {
   return typeof initialValue === "function"
@@ -12,28 +12,34 @@ export function useLocalStorageState<T>(
   key: string,
   initialValue: T | (() => T),
 ): [T, Dispatch<SetStateAction<T>>] {
-  const [value, setValue] = useState<T>(() => {
-    const fallbackValue = resolveInitial(initialValue);
+  const initialRef = useRef<T>(resolveInitial(initialValue));
+  const [value, setValue] = useState<T>(initialRef.current);
+  const [loaded, setLoaded] = useState(false);
 
-    if (typeof window === "undefined") {
-      return fallbackValue;
-    }
+  useEffect(() => {
+    const fallbackValue = initialRef.current;
 
     try {
       const storedValue = window.localStorage.getItem(key);
-      return storedValue ? (JSON.parse(storedValue) as T) : fallbackValue;
+      setValue(storedValue ? (JSON.parse(storedValue) as T) : fallbackValue);
     } catch {
-      return fallbackValue;
+      setValue(fallbackValue);
+    } finally {
+      setLoaded(true);
     }
-  });
+  }, [key]);
 
   useEffect(() => {
+    if (!loaded) {
+      return;
+    }
+
     try {
       window.localStorage.setItem(key, JSON.stringify(value));
     } catch {
       // Ignore write failures (private mode / quota / blocked storage).
     }
-  }, [key, value]);
+  }, [key, loaded, value]);
 
   return [value, setValue];
 }

@@ -46,6 +46,10 @@ export const DEFAULT_CHAT_SESSIONS: ChatSession[] = [
   {
     id: createId(),
     title: "Welcome",
+    apiProfileId: null,
+    characterPresetId: null,
+    instructionPresetId: null,
+    settingsConfigured: true,
     createdAt: now,
     updatedAt: now,
     messages: [
