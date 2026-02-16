@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import { ChatSession } from "@/types/chat";
 
@@ -25,31 +25,55 @@ export function ChatPanel({
   onSendMessage,
   onOpenChatSettings,
 }: ChatPanelProps) {
+  const TEXTAREA_MAX_HEIGHT = 168;
   const [inputValue, setInputValue] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [chat?.messages.length]);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) {
+      return;
+    }
 
+    el.style.height = "0px";
+    const nextHeight = Math.min(el.scrollHeight, TEXTAREA_MAX_HEIGHT);
+    el.style.height = `${nextHeight}px`;
+    el.style.overflowY = el.scrollHeight > TEXTAREA_MAX_HEIGHT ? "auto" : "hidden";
+  }, [inputValue]);
+
+  const submitCurrentInput = () => {
     const trimmed = inputValue.trim();
     if (inputDisabled) {
       onOpenChatSettings();
-      return;
+      return false;
     }
     if (isThinking) {
-      return;
+      return false;
     }
-
     if (!trimmed) {
-      return;
+      return false;
     }
 
     onSendMessage(trimmed);
     setInputValue("");
+    return true;
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submitCurrentInput();
+  };
+
+  const handleInputKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      submitCurrentInput();
+    }
   };
 
   return (
@@ -135,9 +159,11 @@ export function ChatPanel({
       <form onSubmit={handleSubmit} className="px-6 pb-6 pt-2">
         <div className="flex items-end gap-3 rounded-2xl bg-zinc-900/70 p-2">
           <textarea
+            ref={textareaRef}
             value={inputValue}
             onChange={(event) => setInputValue(event.target.value)}
-            rows={2}
+            onKeyDown={handleInputKeyDown}
+            rows={1}
             disabled={inputDisabled || isThinking}
             placeholder={
               inputDisabled
@@ -146,7 +172,7 @@ export function ChatPanel({
                   ? "Thinking..."
                 : "Type your message..."
             }
-            className="min-h-20 flex-1 resize-none rounded-xl bg-transparent px-4 py-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 disabled:cursor-not-allowed disabled:text-zinc-500"
+            className="max-h-42 min-h-[42px] flex-1 resize-none rounded-xl bg-transparent px-4 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 disabled:cursor-not-allowed disabled:text-zinc-500"
           />
           <button
             type="submit"
