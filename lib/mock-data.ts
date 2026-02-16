@@ -1,6 +1,4 @@
-﻿import { AppSettings, ChatSession, Preset, Provider } from "@/types/chat";
-
-import { createId } from "./chat-utils";
+import { AppSettings, ChatSession, Preset, Provider } from "@/types/chat";
 
 export const PROVIDER_MODELS: Record<Provider, string[]> = {
   OpenAI: ["gpt-4o-mini", "gpt-4.1-mini", "gpt-4.1"],
@@ -16,12 +14,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 export const DEFAULT_INSTRUCTION_PRESETS: Preset[] = [
   {
-    id: createId(),
+    id: "preset-instruction-storyteller",
     name: "Storyteller",
     content: "Respond in descriptive prose, keeping continuity between turns.",
   },
   {
-    id: createId(),
+    id: "preset-instruction-rules-light",
     name: "Rules-Light",
     content: "Keep responses concise, prioritize player agency, and avoid railroading.",
   },
@@ -29,38 +27,37 @@ export const DEFAULT_INSTRUCTION_PRESETS: Preset[] = [
 
 export const DEFAULT_CHARACTER_PRESETS: Preset[] = [
   {
-    id: createId(),
+    id: "preset-character-cyber-detective",
     name: "Cyber Detective",
     content: "A calm investigator with dry humor and strong pattern recognition.",
   },
   {
-    id: createId(),
+    id: "preset-character-fantasy-mage",
     name: "Fantasy Mage",
     content: "An archivist mage who speaks formally and values forgotten lore.",
   },
 ];
 
-const now = Date.now();
+const DEFAULT_TIMESTAMP = Date.UTC(2025, 0, 1, 12, 0, 0);
 
 export const DEFAULT_CHAT_SESSIONS: ChatSession[] = [
   {
-    id: createId(),
+    id: "chat-welcome",
     title: "Welcome",
     apiProfileId: null,
     characterPresetId: null,
     instructionPresetId: null,
     settingsConfigured: true,
-    createdAt: now,
-    updatedAt: now,
+    createdAt: DEFAULT_TIMESTAMP,
+    updatedAt: DEFAULT_TIMESTAMP,
     messages: [
       {
-        id: createId(),
+        id: "msg-welcome-1",
         role: "assistant",
         content:
           "Welcome to RP Chat MVP. This prototype stores chats, presets, and settings in localStorage.",
-        createdAt: now,
+        createdAt: DEFAULT_TIMESTAMP,
       },
     ],
   },
 ];
-

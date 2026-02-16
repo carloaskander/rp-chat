@@ -15,6 +15,7 @@ interface SidebarProps {
   onEditChatSettings: (chatId: string) => void;
   onDeleteChat: (chatId: string) => void;
   onRenameChat: (chatId: string, title: string) => void;
+  className?: string;
 }
 
 const navItems: Array<{ key: SidebarView; label: string }> = [
@@ -32,6 +33,7 @@ export function Sidebar({
   onEditChatSettings,
   onDeleteChat,
   onRenameChat,
+  className,
 }: SidebarProps) {
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
@@ -71,12 +73,12 @@ export function Sidebar({
   };
 
   return (
-    <aside className="flex h-full w-full max-w-72 flex-col px-2 py-2">
+    <aside className={className ?? "flex h-full w-full max-w-72 flex-col px-2 py-2"}>
       <div className="p-2">
         <button
           type="button"
           onClick={onNewChat}
-          className="w-full rounded-xl bg-zinc-800/80 px-3 py-2.5 text-sm font-medium text-zinc-100 transition hover:bg-zinc-700/80"
+          className="w-full rounded-xl bg-zinc-800/80 px-3 py-3 text-base sm:py-2.5 sm:text-sm font-medium text-zinc-100 transition hover:bg-zinc-700/80"
         >
           New Chat
         </button>
@@ -91,7 +93,7 @@ export function Sidebar({
                 key={item.key}
                 type="button"
                 onClick={() => onViewChange(item.key)}
-                className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                className={`w-full rounded-lg px-3 py-2.5 text-left text-[15px] sm:py-2 sm:text-sm transition ${
                   isActive
                     ? "bg-zinc-800 text-zinc-100"
                     : "text-zinc-400 hover:bg-zinc-900/70 hover:text-zinc-200"
@@ -144,7 +146,7 @@ export function Sidebar({
                     onClick={() => onSelectChat(chat.id)}
                     className="min-w-0 flex-1 px-2 py-1 text-left"
                   >
-                    <p className="truncate text-sm font-medium">{chat.title}</p>
+                    <p className="truncate text-[15px] font-medium sm:text-sm">{chat.title}</p>
                     <p
                       className={`mt-0.5 text-xs ${isActive ? "text-zinc-400" : "text-zinc-500"}`}
                     >

@@ -44,6 +44,7 @@ export function ChatApp() {
   const [activeView, setActiveView] = useState<SidebarView>("chat");
   const [chatSettingsChatId, setChatSettingsChatId] = useState<string | null>(null);
   const [thinkingChatId, setThinkingChatId] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     setChats((prev) => {
@@ -117,11 +118,18 @@ export function ChatApp() {
     setChats((prev) => [newChat, ...prev]);
     setActiveChatId(newChat.id);
     setActiveView("chat");
+    setIsSidebarOpen(false);
+  };
+
+  const handleViewChange = (view: SidebarView) => {
+    setActiveView(view);
+    setIsSidebarOpen(false);
   };
 
   const handleSelectChat = (chatId: string) => {
     setActiveChatId(chatId);
     setActiveView("chat");
+    setIsSidebarOpen(false);
   };
 
   const handleDeleteChat = (chatId: string) => {
@@ -369,36 +377,68 @@ export function ChatApp() {
   };
 
   return (
-    <main className="mx-auto flex h-screen w-full max-w-[1480px] flex-col px-3 py-4 sm:px-5 sm:py-5">
-      <header className="flex items-center justify-between px-5 py-3">
-        <div>
-          <h1 className="text-lg font-medium tracking-tight text-zinc-100">RP Chat MVP</h1>
-          <p className="text-xs text-zinc-400">
-            {settings.provider} - {settings.model}
+    <main className="mx-auto flex h-[100dvh] w-full max-w-[1480px] flex-col px-2 py-2 sm:px-5 sm:py-5">
+      <header className="flex items-center justify-between px-4 py-3 sm:px-5">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              aria-label="Open sidebar"
+              onClick={() => setIsSidebarOpen((prev) => !prev)}
+              className="p-1.5 text-zinc-300 transition hover:text-zinc-100 md:hidden"
+            >
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path strokeLinecap="round" d="M4 8h14" />
+                <path strokeLinecap="round" d="M4 14h10" />
+              </svg>
+            </button>
+            <h1 className="text-[1.1rem] font-medium tracking-tight text-zinc-100 sm:text-lg">RP Chat MVP</h1>
+          </div>
+          <p className="truncate text-sm text-zinc-400 sm:text-xs">
+            Your private roleplay hub
           </p>
         </div>
         <Link
           href="/settings"
-          className="rounded-lg bg-zinc-800/80 px-3 py-1.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-700/80"
+          className="rounded-lg bg-zinc-800/80 px-3.5 py-2 text-[15px] font-medium text-zinc-300 transition hover:bg-zinc-700/80 sm:px-3 sm:py-1.5 sm:text-sm"
         >
           Settings
         </Link>
       </header>
 
-      <div className="mt-4 flex min-h-0 flex-1 gap-4 overflow-hidden">
+      <div className="mt-2 flex min-h-0 min-w-0 flex-1 overflow-hidden sm:mt-4 sm:gap-4">
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="Close sidebar"
+          onClick={() => setIsSidebarOpen(false)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              setIsSidebarOpen(false);
+            }
+          }}
+          className={`fixed inset-0 z-30 bg-black/50 transition-opacity md:hidden ${
+            isSidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
+        />
+
         <Sidebar
           activeView={activeView}
           chats={sortedChats}
           activeChatId={activeChatId}
           onNewChat={handleNewChat}
-          onViewChange={setActiveView}
+          onViewChange={handleViewChange}
           onSelectChat={handleSelectChat}
           onEditChatSettings={handleOpenChatSettings}
           onDeleteChat={handleDeleteChat}
           onRenameChat={handleRenameChat}
+          className={`fixed inset-y-0 left-0 z-40 flex w-[85vw] max-w-72 flex-col bg-zinc-950 px-2 py-2 shadow-2xl transition-transform md:static md:z-auto md:w-full md:max-w-72 md:translate-x-0 md:shadow-none ${
+            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
         />
 
-        <section className="min-h-0 flex-1">
+        <section className="min-h-0 min-w-0 flex-1">
           {activeView === "chat" && (
             <ChatPanel
               chat={activeChat}
