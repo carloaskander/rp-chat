@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# rp-chat
 
-## Getting Started
+This is an experimental AI chat app focused on **roleplay, character consistency, and prompt control**.
 
-First, run the development server:
+It's built as a personal project to explore what a cleaner, more intentional AI chat experience can look like, especially for roleplay and long-form interactions, without the clutter or limitations of existing UIs.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+The project is still early and evolving.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What it does (so far)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Chat with real AI models using your **own API keys**
+- Support for multiple providers and models via API profiles
+- Per-chat configuration:
+  - API profile
+  - Optional character preset
+  - Optional instruction preset
+- Character and instruction presets to control tone, style, and behavior
+- API profile validation from Settings
+- Manual "Fetch models" action in Settings to load provider model IDs
+- Chat actions in sidebar (rename, edit settings, delete)
+- Clean UI with a focus on readability
+- Local-first persistence (no backend or accounts yet)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## What it is not (yet)
 
-## Learn More
+- No backend
+- No accounts or cloud sync
+- No cost tracking or analytics
+- No guarantees of stability
 
-To learn more about Next.js, take a look at the following resources:
+This is an MVP meant for experimentation and iteration.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Tech stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Next.js
+- TypeScript
+- Tailwind CSS
+- Frontend-only API calls (BYO keys)
 
-## Deploy on Vercel
+## Why this exists
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Most AI chat tools optimize for general assistance.  
+This project explores a different angle: **giving the user explicit control over prompts, characters, and context**, while keeping the interface calm and unobtrusive.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+It's built primarily for learning, testing ideas, and personal use.
+
+## Status
+
+Active development.  
+Things will change.  
+Expect rough edges.
+
+---
+
+If you're reading this and experimenting with the code, feel free to explore, but don't expect polish or long-term guarantees yet.
