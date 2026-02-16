@@ -10,9 +10,7 @@ import { ApiProfileEditorModal } from "./api-profile-editor-modal";
 
 interface ApiProfileListProps {
   profiles: ApiProfile[];
-  activeProfileId: string | null;
   onChangeProfiles: (profiles: ApiProfile[]) => void;
-  onChangeActiveProfileId: (profileId: string | null) => void;
 }
 
 const emptyDraft: Omit<ApiProfile, "id"> = {
@@ -24,9 +22,7 @@ const emptyDraft: Omit<ApiProfile, "id"> = {
 
 export function ApiProfileList({
   profiles,
-  activeProfileId,
   onChangeProfiles,
-  onChangeActiveProfileId,
 }: ApiProfileListProps) {
   const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -41,10 +37,6 @@ export function ApiProfileList({
   const handleDeleteProfile = (profileId: string) => {
     const nextProfiles = profiles.filter((profile) => profile.id !== profileId);
     onChangeProfiles(nextProfiles);
-
-    if (activeProfileId === profileId) {
-      onChangeActiveProfileId(nextProfiles[0]?.id ?? null);
-    }
   };
 
   const handleValidateProfile = async (profile: ApiProfile) => {
@@ -80,22 +72,15 @@ export function ApiProfileList({
       ) : (
         <div className="space-y-2">
           {profiles.map((profile) => {
-            const isActive = profile.id === activeProfileId;
             const validation = validationResults[profile.id];
             const isValidating = validatingProfileId === profile.id;
 
             return (
               <article
                 key={profile.id}
-                className={`flex items-center justify-between rounded-xl px-3 py-3 ${
-                  isActive ? "bg-zinc-800/90" : "bg-zinc-900/60"
-                }`}
+                className="flex items-center justify-between rounded-xl bg-zinc-900/60 px-3 py-3 transition hover:bg-zinc-800/70"
               >
-                <button
-                  type="button"
-                  onClick={() => onChangeActiveProfileId(profile.id)}
-                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                >
+                <div className="flex min-w-0 flex-1 items-center gap-3 text-left">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-700 text-xs font-semibold text-zinc-200">
                     API
                   </div>
@@ -112,14 +97,9 @@ export function ApiProfileList({
                       </p>
                     )}
                   </div>
-                </button>
+                </div>
 
                 <div className="ml-3 flex items-center gap-2">
-                  {isActive && (
-                    <span className="rounded-md bg-zinc-700 px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-zinc-200">
-                      Active
-                    </span>
-                  )}
                   <button
                     type="button"
                     onClick={() => void handleValidateProfile(profile)}
@@ -178,9 +158,6 @@ export function ApiProfileList({
             };
             const nextProfiles = [nextProfile, ...profiles];
             onChangeProfiles(nextProfiles);
-            if (!activeProfileId) {
-              onChangeActiveProfileId(nextProfile.id);
-            }
           } else if (editingProfile) {
             const nextProfiles = profiles.map((profile) =>
               profile.id === editingProfile.id ? { ...profile, ...value } : profile,

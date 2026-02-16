@@ -21,17 +21,10 @@ export function SettingsForm() {
   );
 
   useEffect(() => {
-    if (profiles.length === 0) {
-      if (activeProfileId !== null) {
-        setActiveProfileId(null);
-      }
-      return;
+    if (activeProfileId) {
+      setActiveProfileId(null);
     }
-
-    if (!activeProfileId || !profiles.some((profile) => profile.id === activeProfileId)) {
-      setActiveProfileId(profiles[0].id);
-    }
-  }, [activeProfileId, profiles, setActiveProfileId]);
+  }, [activeProfileId, setActiveProfileId]);
 
   return (
     <section className="space-y-5">
@@ -40,9 +33,7 @@ export function SettingsForm() {
       {activeTab === "api" && (
         <ApiProfileList
           profiles={profiles}
-          activeProfileId={activeProfileId}
           onChangeProfiles={setProfiles}
-          onChangeActiveProfileId={setActiveProfileId}
         />
       )}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useState } from "react";
 
 import { fetchProviderModels } from "@/lib/provider-models";
 import { ApiProfile } from "@/types/settings";
@@ -36,12 +36,12 @@ export function ApiProfileEditorModal({
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsError, setModelsError] = useState<string | null>(null);
 
-  const loadModels = useCallback(async () => {
+  const loadModels = useCallback(async (providerValue: string, apiKeyValue: string) => {
     if (!open) {
       return;
     }
 
-    if (!apiKey.trim()) {
+    if (!apiKeyValue.trim()) {
       setModels([]);
       setModelsError("Add API key to load provider models.");
       return;
@@ -51,26 +51,20 @@ export function ApiProfileEditorModal({
     setModelsError(null);
     try {
       const fetchedModels = await fetchProviderModels({
-        name: name.trim() || "Temp",
-        provider,
-        model,
-        apiKey,
+        name: "Temp",
+        provider: providerValue,
+        model: "",
+        apiKey: apiKeyValue,
       });
       setModels(fetchedModels);
-      if (!model && fetchedModels.length > 0) {
-        setModel(fetchedModels[0]);
-      }
+      setModel((prev) => (prev || fetchedModels[0] || prev));
     } catch (error) {
       setModels([]);
       setModelsError(error instanceof Error ? error.message : "Could not load models.");
     } finally {
       setModelsLoading(false);
     }
-  }, [apiKey, model, name, open, provider]);
-
-  useEffect(() => {
-    void loadModels();
-  }, [loadModels]);
+  }, [open]);
 
   if (!open) {
     return null;
@@ -127,20 +121,9 @@ export function ApiProfileEditorModal({
           </div>
 
           <div>
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <label className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-                Model
-              </label>
-              <button
-                type="button"
-                onClick={() => void loadModels()}
-                disabled={modelsLoading}
-                className="rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {modelsLoading ? "Loading..." : "Refresh"}
-              </button>
-            </div>
-
+            <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+              Model
+            </label>
             {models.length > 0 ? (
               <select
                 value={model}
@@ -162,6 +145,16 @@ export function ApiProfileEditorModal({
                 className="w-full rounded-xl bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
               />
             )}
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => void loadModels(provider, apiKey)}
+                disabled={modelsLoading}
+                className="rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {modelsLoading ? "Loading..." : "Fetch models"}
+              </button>
+            </div>
             {modelsError && <p className="mt-1 text-xs text-zinc-500">{modelsError}</p>}
           </div>
 
