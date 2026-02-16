@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
+import { generateAssistantReply } from "@/lib/ai-client";
 import { buildChatTitle, createEmptyChatSession, createId } from "@/lib/chat-utils";
 import {
   DEFAULT_CHARACTER_PRESETS,
@@ -42,6 +43,7 @@ export function ChatApp() {
 
   const [activeView, setActiveView] = useState<SidebarView>("chat");
   const [chatSettingsChatId, setChatSettingsChatId] = useState<string | null>(null);
+  const [thinkingChatId, setThinkingChatId] = useState<string | null>(null);
 
   useEffect(() => {
     setChats((prev) => {
@@ -108,6 +110,7 @@ export function ChatApp() {
     activeInstructionPreset?.name ?? "No instruction preset",
     activeCharacterPreset?.name ?? "No character preset",
   ].join(" · ");
+  const isActiveChatThinking = Boolean(activeChat && thinkingChatId === activeChat.id);
 
   const handleNewChat = () => {
     const newChat = createEmptyChatSession(chats.length + 1);
@@ -138,6 +141,9 @@ export function ChatApp() {
       if (chatSettingsChatId === chatId) {
         setChatSettingsChatId(null);
       }
+      if (thinkingChatId === chatId) {
+        setThinkingChatId(null);
+      }
 
       return nextChats;
     });
@@ -157,7 +163,7 @@ export function ChatApp() {
     );
   };
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = async (content: string) => {
     if (!activeChatId) {
       return;
     }
@@ -172,6 +178,20 @@ export function ChatApp() {
       return;
     }
 
+    const selectedProfile = apiProfiles.find((profile) => profile.id === targetChat.apiProfileId);
+    if (!selectedProfile || !selectedProfile.apiKey.trim()) {
+      setChatSettingsChatId(activeChatId);
+      return;
+    }
+
+    const selectedInstructionPreset = instructionPresets.find(
+      (preset) => preset.id === targetChat.instructionPresetId,
+    );
+    const selectedCharacterPreset = characterPresets.find(
+      (preset) => preset.id === targetChat.characterPresetId,
+    );
+    const requestChatId = activeChatId;
+
     const now = Date.now();
 
     const userMessage: ChatMessage = {
@@ -181,20 +201,13 @@ export function ChatApp() {
       createdAt: now,
     };
 
-    const assistantMessage: ChatMessage = {
-      id: createId(),
-      role: "assistant",
-      content: `Mock reply (${settings.model}): ${content}`,
-      createdAt: now + 1,
-    };
-
     setChats((prev) =>
       prev.map((chat, index) => {
         if (chat.id !== activeChatId) {
           return chat;
         }
 
-        const nextMessages = [...chat.messages, userMessage, assistantMessage];
+        const nextMessages = [...chat.messages, userMessage];
 
         return {
           ...chat,
@@ -204,6 +217,77 @@ export function ChatApp() {
         };
       }),
     );
+    setThinkingChatId(requestChatId);
+
+    try {
+      const messagesForModel = [...targetChat.messages, userMessage].filter(
+        (message) =>
+          !(
+            message.role === "assistant" &&
+            message.content.startsWith("Request failed:")
+          ),
+      );
+
+      const reply = await generateAssistantReply({
+        profile: selectedProfile,
+        messages: messagesForModel,
+        instructionContent: selectedInstructionPreset?.content,
+        characterContent: selectedCharacterPreset?.content,
+      });
+
+      const assistantMessage: ChatMessage = {
+        id: createId(),
+        role: "assistant",
+        content: reply,
+        createdAt: Date.now(),
+      };
+
+      setChats((prev) =>
+        prev.map((chat, index) => {
+          if (chat.id !== requestChatId) {
+            return chat;
+          }
+
+          const nextMessages = [...chat.messages, assistantMessage];
+
+          return {
+            ...chat,
+            messages: nextMessages,
+            title: buildChatTitle(nextMessages, index + 1),
+            updatedAt: Date.now(),
+          };
+        }),
+      );
+    } catch (error) {
+      const assistantMessage: ChatMessage = {
+        id: createId(),
+        role: "assistant",
+        content:
+          error instanceof Error
+            ? `Request failed: ${error.message}`
+            : "Request failed: unknown error",
+        createdAt: Date.now(),
+      };
+
+      setChats((prev) =>
+        prev.map((chat, index) => {
+          if (chat.id !== requestChatId) {
+            return chat;
+          }
+
+          const nextMessages = [...chat.messages, assistantMessage];
+
+          return {
+            ...chat,
+            messages: nextMessages,
+            title: buildChatTitle(nextMessages, index + 1),
+            updatedAt: Date.now(),
+          };
+        }),
+      );
+    } finally {
+      setThinkingChatId((prev) => (prev === requestChatId ? null : prev));
+    }
   };
 
   const createPresetHandlers = (
@@ -322,6 +406,7 @@ export function ChatApp() {
               inputDisabled={activeChatInputLocked}
               setupRequired={activeChatInputLocked}
               hasApiProfiles={hasApiProfiles}
+              isThinking={isActiveChatThinking}
               onSendMessage={handleSendMessage}
               onOpenChatSettings={() => {
                 if (activeChat) {

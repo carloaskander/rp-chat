@@ -10,6 +10,7 @@ interface ChatPanelProps {
   inputDisabled: boolean;
   setupRequired: boolean;
   hasApiProfiles: boolean;
+  isThinking: boolean;
   onSendMessage: (content: string) => void;
   onOpenChatSettings: () => void;
 }
@@ -20,6 +21,7 @@ export function ChatPanel({
   inputDisabled,
   setupRequired,
   hasApiProfiles,
+  isThinking,
   onSendMessage,
   onOpenChatSettings,
 }: ChatPanelProps) {
@@ -36,6 +38,9 @@ export function ChatPanel({
     const trimmed = inputValue.trim();
     if (inputDisabled) {
       onOpenChatSettings();
+      return;
+    }
+    if (isThinking) {
       return;
     }
 
@@ -85,26 +90,43 @@ export function ChatPanel({
           </div>
         ) : chat?.messages.length ? (
           chat.messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${
-                message.role === "user" ? "justify-end" : "w-full justify-start"
-              }`}
-            >
-              {message.role === "user" ? (
-                <div className="max-w-[78%] rounded-2xl bg-zinc-800 px-4 py-3 text-sm leading-relaxed text-zinc-100">
-                  {message.content}
+            (() => {
+              const isTransportError =
+                message.role === "assistant" &&
+                message.content.startsWith("Request failed:");
+
+              return (
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    message.role === "user" ? "justify-end" : "w-full justify-start"
+                  }`}
+                >
+                  {message.role === "user" ? (
+                    <div className="max-w-[78%] rounded-2xl bg-zinc-800 px-4 py-3 text-sm leading-relaxed text-zinc-100">
+                      {message.content}
+                    </div>
+                  ) : isTransportError ? (
+                    <article className="w-full max-w-3xl rounded-xl border border-rose-500/50 bg-rose-950/30 px-4 py-3 text-sm leading-6 text-rose-200 whitespace-pre-wrap">
+                      {message.content}
+                    </article>
+                  ) : (
+                    <article className="w-full max-w-3xl px-1 text-[15px] leading-7 text-zinc-200 whitespace-pre-wrap">
+                      {message.content}
+                    </article>
+                  )}
                 </div>
-              ) : (
-                <article className="w-full max-w-3xl px-1 text-[15px] leading-7 text-zinc-200 whitespace-pre-wrap">
-                  {message.content}
-                </article>
-              )}
-            </div>
+              );
+            })()
           ))
         ) : (
           <div className="mx-auto mt-16 max-w-md text-center text-sm text-zinc-500">
             Send a message to begin this chat.
+          </div>
+        )}
+        {isThinking && (
+          <div className="w-full max-w-3xl px-1 text-[15px] leading-7 text-zinc-400">
+            Thinking...
           </div>
         )}
         <div ref={bottomRef} />
@@ -116,20 +138,22 @@ export function ChatPanel({
             value={inputValue}
             onChange={(event) => setInputValue(event.target.value)}
             rows={2}
-            disabled={inputDisabled}
+            disabled={inputDisabled || isThinking}
             placeholder={
               inputDisabled
                 ? "Select an API profile in Chat Settings..."
+                : isThinking
+                  ? "Thinking..."
                 : "Type your message..."
             }
             className="min-h-20 flex-1 resize-none rounded-xl bg-transparent px-4 py-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 disabled:cursor-not-allowed disabled:text-zinc-500"
           />
           <button
             type="submit"
-            disabled={inputDisabled}
+            disabled={inputDisabled || isThinking}
             className="rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-100 transition hover:bg-zinc-700"
           >
-            Send
+            {isThinking ? "Thinking..." : "Send"}
           </button>
         </div>
       </form>

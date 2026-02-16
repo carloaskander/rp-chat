@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { createId } from "@/lib/chat-utils";
+import { validateApiProfile } from "@/lib/profile-validation";
 import { ApiProfile } from "@/types/settings";
 
 import { ApiProfileEditorModal } from "./api-profile-editor-modal";
@@ -29,6 +30,10 @@ export function ApiProfileList({
 }: ApiProfileListProps) {
   const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [validatingProfileId, setValidatingProfileId] = useState<string | null>(null);
+  const [validationResults, setValidationResults] = useState<
+    Record<string, { ok: boolean; message: string }>
+  >({});
 
   const editingProfile = profiles.find((profile) => profile.id === editingProfileId) ?? null;
   const isModalOpen = isCreating || editingProfile !== null;
@@ -40,6 +45,16 @@ export function ApiProfileList({
     if (activeProfileId === profileId) {
       onChangeActiveProfileId(nextProfiles[0]?.id ?? null);
     }
+  };
+
+  const handleValidateProfile = async (profile: ApiProfile) => {
+    setValidatingProfileId(profile.id);
+    const result = await validateApiProfile(profile);
+    setValidationResults((prev) => ({
+      ...prev,
+      [profile.id]: result,
+    }));
+    setValidatingProfileId(null);
   };
 
   return (
@@ -66,6 +81,8 @@ export function ApiProfileList({
         <div className="space-y-2">
           {profiles.map((profile) => {
             const isActive = profile.id === activeProfileId;
+            const validation = validationResults[profile.id];
+            const isValidating = validatingProfileId === profile.id;
 
             return (
               <article
@@ -87,6 +104,13 @@ export function ApiProfileList({
                     <p className="truncate text-xs text-zinc-400">
                       {profile.provider} - {profile.model || "No model"}
                     </p>
+                    {validation && (
+                      <p
+                        className={`mt-1 text-xs ${validation.ok ? "text-emerald-400" : "text-rose-400"}`}
+                      >
+                        {validation.message}
+                      </p>
+                    )}
                   </div>
                 </button>
 
@@ -96,6 +120,14 @@ export function ApiProfileList({
                       Active
                     </span>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => void handleValidateProfile(profile)}
+                    disabled={isValidating}
+                    className="rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isValidating ? "Validating..." : "Validate"}
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
