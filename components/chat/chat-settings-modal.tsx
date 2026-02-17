@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { X } from "lucide-react";
 
 import { Preset } from "@/types/chat";
 import { ApiProfile } from "@/types/settings";
@@ -64,7 +65,7 @@ export function ChatSettingsModal({
       <form
         key={`${title}-${initialValues.apiProfileId ?? ""}-${initialValues.characterPresetId ?? ""}-${initialValues.instructionPresetId ?? ""}`}
         onSubmit={handleSubmit}
-        className="w-full max-w-xl rounded-2xl border border-zinc-700 bg-zinc-900 p-5 shadow-2xl shadow-black/50"
+        className="w-full max-w-xl rounded-[2px] border border-zinc-700 bg-zinc-900 p-5 shadow-2xl shadow-black/50"
       >
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -77,9 +78,9 @@ export function ChatSettingsModal({
             type="button"
             aria-label="Close"
             onClick={onCancel}
-            className="rounded-md px-2 py-1 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-[2px] text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
           >
-            x
+            <X className="h-4 w-4" />
           </button>
         </div>
 
@@ -91,7 +92,7 @@ export function ChatSettingsModal({
             <select
               value={apiProfileId}
               onChange={(event) => setApiProfileId(event.target.value)}
-              className="w-full rounded-xl bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none"
+              className="w-full rounded-[2px] bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none"
             >
               <option value="">Select API profile</option>
               {apiProfiles.map((profile) => (
@@ -109,7 +110,7 @@ export function ChatSettingsModal({
             <select
               value={characterPresetId}
               onChange={(event) => setCharacterPresetId(event.target.value)}
-              className="w-full rounded-xl bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none"
+              className="w-full rounded-[2px] bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none"
             >
               <option value="">Select character preset</option>
               {characterPresets.map((preset) => (
@@ -127,7 +128,7 @@ export function ChatSettingsModal({
             <select
               value={instructionPresetId}
               onChange={(event) => setInstructionPresetId(event.target.value)}
-              className="w-full rounded-xl bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none"
+              className="w-full rounded-[2px] bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none"
             >
               <option value="">Select instruction preset</option>
               {instructionPresets.map((preset) => (
@@ -143,14 +144,14 @@ export function ChatSettingsModal({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-700"
+            className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-700"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={!canSave}
-            className="rounded-lg border border-zinc-600 bg-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-100 hover:bg-zinc-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-[2px] border border-zinc-600 bg-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-100 hover:bg-zinc-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Save
           </button>

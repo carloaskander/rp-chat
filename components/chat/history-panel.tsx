@@ -24,7 +24,7 @@ export function HistoryPanel({
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-8 pb-8 pt-4">
         {chats.length === 0 && (
-          <div className="rounded-xl bg-zinc-900/70 p-4 text-sm text-zinc-500">
+          <div className="rounded-[2px] bg-zinc-900/70 p-4 text-sm text-zinc-500">
             No chats yet.
           </div>
         )}
@@ -35,7 +35,7 @@ export function HistoryPanel({
           return (
             <article
               key={chat.id}
-              className={`rounded-xl p-4 ${isActive ? "bg-zinc-800/80" : "bg-zinc-900/70"}`}
+              className={`rounded-[2px] p-4 ${isActive ? "bg-zinc-800/80" : "bg-zinc-900/70"}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -48,14 +48,14 @@ export function HistoryPanel({
                   <button
                     type="button"
                     onClick={() => onOpenChat(chat.id)}
-                    className="rounded-lg bg-zinc-800/90 px-2.5 py-1.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-700/90"
+                    className="rounded-[2px] bg-zinc-800/90 px-2.5 py-1.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-700/90"
                   >
                     Open
                   </button>
                   <button
                     type="button"
                     onClick={() => onDeleteChat(chat.id)}
-                    className="rounded-lg bg-zinc-800/90 px-2.5 py-1.5 text-xs font-medium text-zinc-400 transition hover:bg-zinc-700/90 hover:text-zinc-200"
+                    className="rounded-[2px] bg-zinc-800/90 px-2.5 py-1.5 text-xs font-medium text-zinc-400 transition hover:bg-zinc-700/90 hover:text-zinc-200"
                   >
                     Delete
                   </button>

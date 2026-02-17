@@ -9,7 +9,7 @@ export default function SettingsPage() {
         <h1 className="text-lg font-medium tracking-tight text-zinc-100">Settings</h1>
         <Link
           href="/"
-          className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-700"
+          className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-700"
         >
           Back to Chat
         </Link>

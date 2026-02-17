@@ -22,7 +22,7 @@ export function PresetEditorPanel({
         <button
           type="button"
           onClick={onAddPreset}
-          className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-700"
+          className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-700"
         >
           Add Preset
         </button>
@@ -38,12 +38,12 @@ export function PresetEditorPanel({
                   onUpdatePreset(preset.id, { name: event.target.value })
                 }
                 placeholder="Preset name"
-                className="w-full rounded-lg bg-zinc-900/70 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
+                className="w-full rounded-[2px] bg-zinc-900/70 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
               />
               <button
                 type="button"
                 onClick={() => onDeletePreset(preset.id)}
-                className="rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-2 text-xs font-medium text-zinc-400 transition hover:bg-zinc-700 hover:text-zinc-200"
+                className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-2.5 py-2 text-xs font-medium text-zinc-400 transition hover:bg-zinc-700 hover:text-zinc-200"
               >
                 Delete
               </button>
@@ -55,13 +55,13 @@ export function PresetEditorPanel({
               }
               rows={4}
               placeholder="Preset prompt"
-              className="w-full resize-y rounded-lg bg-zinc-900/70 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
+              className="w-full resize-y rounded-[2px] bg-zinc-900/70 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
             />
           </article>
         ))}
 
         {presets.length === 0 && (
-          <div className="rounded-xl bg-zinc-900/70 p-4 text-sm text-zinc-500">
+          <div className="rounded-[2px] bg-zinc-900/70 p-4 text-sm text-zinc-500">
             No presets yet.
           </div>
         )}

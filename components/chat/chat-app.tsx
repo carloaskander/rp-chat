@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { Cog, Menu, SlidersHorizontal } from "lucide-react";
 
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
 import { generateAssistantReply } from "@/lib/ai-client";
@@ -387,23 +388,44 @@ export function ChatApp() {
               onClick={() => setIsSidebarOpen((prev) => !prev)}
               className="p-1.5 text-zinc-300 transition hover:text-zinc-100 md:hidden"
             >
-              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path strokeLinecap="round" d="M4 8h14" />
-                <path strokeLinecap="round" d="M4 14h10" />
-              </svg>
+              <Menu className="h-6 w-6" />
             </button>
-            <h1 className="text-[1.1rem] font-medium tracking-tight text-zinc-100 sm:text-lg">RP Chat MVP</h1>
+            <div className="min-w-0 md:hidden">
+              <h1 className="truncate text-[1.05rem] font-medium tracking-tight text-zinc-100">
+                {activeView === "chat" ? activeChat?.title ?? "No Active Chat" : "RP Chat MVP"}
+              </h1>
+              <p className="truncate text-xs text-zinc-500">
+                {activeView === "chat" ? activeChatModelLabel : "Your private roleplay hub"}
+              </p>
+            </div>
+            <h1 className="hidden text-[1.1rem] font-medium tracking-tight text-zinc-100 md:block sm:text-lg">
+              RP Chat MVP
+            </h1>
           </div>
-          <p className="truncate text-sm text-zinc-400 sm:text-xs">
+          <p className="hidden truncate text-sm text-zinc-400 md:block sm:text-xs">
             Your private roleplay hub
           </p>
         </div>
-        <Link
-          href="/settings"
-          className="rounded-lg bg-zinc-800/80 px-3.5 py-2 text-[15px] font-medium text-zinc-300 transition hover:bg-zinc-700/80 sm:px-3 sm:py-1.5 sm:text-sm"
-        >
-          Settings
-        </Link>
+        <div className="flex items-center gap-2">
+          {activeView === "chat" && activeChat && (
+            <button
+              type="button"
+              aria-label="Edit chat settings"
+              onClick={() => handleOpenChatSettings(activeChat.id)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-[2px] text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200 md:hidden"
+            >
+              <SlidersHorizontal className="h-5 w-5" />
+            </button>
+          )}
+          <Link
+            href="/settings"
+            aria-label="Open settings"
+            className="hidden h-9 items-center gap-2 rounded-[2px] px-3 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100 md:inline-flex"
+          >
+            <Cog className="h-5 w-5" />
+            <span>Settings</span>
+          </Link>
+        </div>
       </header>
 
       <div className="mt-2 flex min-h-0 min-w-0 flex-1 overflow-hidden sm:mt-4 sm:gap-4">
@@ -433,7 +455,7 @@ export function ChatApp() {
           onEditChatSettings={handleOpenChatSettings}
           onDeleteChat={handleDeleteChat}
           onRenameChat={handleRenameChat}
-          className={`fixed inset-y-0 left-0 z-40 flex w-[85vw] max-w-72 flex-col bg-transparent px-2 py-2 shadow-2xl transition-transform md:static md:z-auto md:w-full md:max-w-72 md:translate-x-0 md:shadow-none ${
+          className={`fixed inset-y-0 left-0 z-40 flex w-[85vw] max-w-72 flex-col bg-zinc-950 px-2 py-2 shadow-2xl transition-transform md:static md:z-auto md:w-full md:max-w-72 md:translate-x-0 md:bg-transparent md:shadow-none ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         />

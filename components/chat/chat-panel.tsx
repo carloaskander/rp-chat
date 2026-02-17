@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
+import { ArrowUp, SlidersHorizontal } from "lucide-react";
 
 import { ChatSession } from "@/types/chat";
 
@@ -124,22 +125,26 @@ export function ChatPanel({
 
   return (
     <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
-      <header className="group flex items-start justify-between gap-3 px-5 pb-4 pt-5 sm:px-8 sm:pt-7">
+      <header className="hidden items-start gap-3 px-8 pb-4 pt-7 md:flex">
         <div className="min-w-0">
-          <p className="truncate text-lg font-medium tracking-tight text-zinc-100 sm:text-base">
-            {chat?.title ?? "No Active Chat"}
-          </p>
-          <p className="mt-1 truncate text-sm text-zinc-500 sm:text-xs">{modelLabel}</p>
+          <div className="flex items-center gap-3">
+            <p className="truncate text-base font-medium tracking-tight text-zinc-100">
+              {chat?.title ?? "No Active Chat"}
+            </p>
+            {chat && (
+              <button
+                type="button"
+                aria-label="Edit chat settings"
+                onClick={onOpenChatSettings}
+                className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[2px] px-3 text-sm font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200"
+              >
+                <SlidersHorizontal className="h-5 w-5" />
+                <span>Chat settings</span>
+              </button>
+            )}
+          </div>
+          <p className="mt-1 truncate text-xs text-zinc-500">{modelLabel}</p>
         </div>
-        {chat && (
-          <button
-            type="button"
-            onClick={onOpenChatSettings}
-            className="shrink-0 text-[15px] text-zinc-400 transition hover:text-zinc-200 sm:text-sm"
-          >
-            Edit chat settings
-          </button>
-        )}
       </header>
 
       <div
@@ -156,7 +161,7 @@ export function ChatPanel({
             <button
               type="button"
               onClick={onOpenChatSettings}
-              className="mt-4 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-[15px] font-medium text-zinc-200 hover:bg-zinc-700 sm:px-3 sm:py-1.5 sm:text-sm"
+              className="mt-4 rounded-[2px] border border-zinc-700 bg-zinc-800 px-4 py-2 text-[15px] font-medium text-zinc-200 hover:bg-zinc-700 sm:px-3 sm:py-1.5 sm:text-sm"
             >
               {hasApiProfiles ? "Open Chat Settings" : "Go to Settings"}
             </button>
@@ -214,7 +219,7 @@ export function ChatPanel({
           paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
         }}
       >
-        <div className="grid w-full max-w-full grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-[24px] border border-zinc-800/80 bg-zinc-900/90 px-3 py-2 backdrop-blur">
+        <div className="grid w-full max-w-full grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-full border border-zinc-800/80 bg-zinc-900/90 px-3 py-2 backdrop-blur">
           <div className="flex min-h-0 min-w-0 items-center overflow-hidden px-1">
             <textarea
               ref={textareaRef}
@@ -239,9 +244,7 @@ export function ChatPanel({
             aria-label={isThinking ? "Thinking" : "Send message"}
             className="self-end h-9 w-9 shrink-0 rounded-full border border-zinc-700 bg-zinc-800 text-zinc-100 transition hover:bg-zinc-700 disabled:opacity-60"
           >
-            <svg viewBox="0 0 20 20" className="mx-auto h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 15V5m0 0-4 4m4-4 4 4" />
-            </svg>
+            <ArrowUp className="mx-auto h-4 w-4" />
           </button>
         </div>
       </form>

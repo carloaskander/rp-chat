@@ -59,14 +59,14 @@ export function ApiProfileList({
             setIsCreating(true);
             setEditingProfileId(null);
           }}
-          className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-700"
+          className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-700"
         >
           Add API Profile
         </button>
       </div>
 
       {profiles.length === 0 ? (
-        <div className="rounded-xl bg-zinc-900/60 p-4 text-sm text-zinc-400">
+        <div className="rounded-[2px] bg-zinc-900/60 p-4 text-sm text-zinc-400">
           No API profiles yet. Add your first profile to continue.
         </div>
       ) : (
@@ -76,12 +76,12 @@ export function ApiProfileList({
             const isValidating = validatingProfileId === profile.id;
 
             return (
-              <article
-                key={profile.id}
-                className="flex items-center justify-between rounded-xl bg-zinc-900/60 px-3 py-3 transition hover:bg-zinc-800/70"
-              >
-                <div className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-700 text-xs font-semibold text-zinc-200">
+            <article
+              key={profile.id}
+              className="flex items-center justify-between rounded-[2px] bg-zinc-900/60 px-3 py-3 transition hover:bg-zinc-800/70"
+            >
+              <div className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[2px] bg-zinc-700 text-xs font-semibold text-zinc-200">
                     API
                   </div>
                   <div className="min-w-0">
@@ -104,7 +104,7 @@ export function ApiProfileList({
                     type="button"
                     onClick={() => void handleValidateProfile(profile)}
                     disabled={isValidating}
-                    className="rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isValidating ? "Validating..." : "Validate"}
                   </button>
@@ -114,14 +114,14 @@ export function ApiProfileList({
                       setIsCreating(false);
                       setEditingProfileId(profile.id);
                     }}
-                    className="rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700"
+                    className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700"
                   >
                     Edit
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDeleteProfile(profile.id)}
-                    className="rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
+                    className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
                   >
                     Delete
                   </button>

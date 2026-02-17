@@ -37,7 +37,7 @@ export function PresetEditorModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-2xl rounded-2xl bg-zinc-900 p-5 shadow-2xl shadow-black/40"
+        className="w-full max-w-2xl rounded-[2px] bg-zinc-900 p-5 shadow-2xl shadow-black/40"
       >
         <h3 className="text-base font-medium text-zinc-100">{title}</h3>
         <div className="mt-4 space-y-4">
@@ -49,7 +49,7 @@ export function PresetEditorModal({
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="Preset name"
-              className="w-full rounded-xl bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
+              className="w-full rounded-[2px] bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
             />
           </div>
           <div>
@@ -61,7 +61,7 @@ export function PresetEditorModal({
               onChange={(event) => setContent(event.target.value)}
               rows={8}
               placeholder="Write preset instructions"
-              className="w-full resize-y rounded-xl bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
+              className="w-full resize-y rounded-[2px] bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
             />
           </div>
         </div>
@@ -72,7 +72,7 @@ export function PresetEditorModal({
               <button
                 type="button"
                 onClick={onDelete}
-                className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-700"
+                className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-700"
               >
                 Delete
               </button>
@@ -82,13 +82,13 @@ export function PresetEditorModal({
             <button
               type="button"
               onClick={onCancel}
-              className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-700"
+              className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-700"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="rounded-lg border border-zinc-600 bg-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-100 hover:bg-zinc-600"
+              className="rounded-[2px] border border-zinc-600 bg-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-100 hover:bg-zinc-600"
             >
               Save
             </button>

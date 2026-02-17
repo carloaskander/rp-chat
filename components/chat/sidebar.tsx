@@ -1,4 +1,6 @@
 import { KeyboardEvent, useState } from "react";
+import Link from "next/link";
+import { Cog, PenSquare } from "lucide-react";
 
 import { ChatSession, SidebarView } from "@/types/chat";
 
@@ -74,12 +76,29 @@ export function Sidebar({
 
   return (
     <aside className={className ?? "flex h-full w-full max-w-72 flex-col px-2 py-2"}>
+      <div className="px-3 pb-2 pt-1 md:hidden">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-medium tracking-tight text-zinc-100">RP Chat MVP</h1>
+            <p className="truncate text-xs text-zinc-400">Your private roleplay hub</p>
+          </div>
+          <Link
+            href="/settings"
+            aria-label="Open settings"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-[2px] bg-zinc-800/80 text-zinc-300 transition hover:bg-zinc-700/80"
+          >
+            <Cog className="h-5 w-5" />
+          </Link>
+        </div>
+      </div>
+
       <div className="p-2">
         <button
           type="button"
           onClick={onNewChat}
-          className="w-full rounded-xl bg-zinc-800/80 px-3 py-3 text-base sm:py-2.5 sm:text-sm font-medium text-zinc-100 transition hover:bg-zinc-700/80"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-[2px] bg-zinc-800/80 px-3 py-3 text-base font-medium text-zinc-100 transition hover:bg-zinc-700/80 sm:py-2.5 sm:text-sm"
         >
+          <PenSquare className="h-5 w-5" />
           New Chat
         </button>
       </div>
@@ -93,7 +112,7 @@ export function Sidebar({
                 key={item.key}
                 type="button"
                 onClick={() => onViewChange(item.key)}
-                className={`w-full rounded-lg px-3 py-2.5 text-left text-[15px] sm:py-2 sm:text-sm transition ${
+                className={`w-full rounded-[2px] px-3 py-2.5 text-left text-[15px] sm:py-2 sm:text-sm transition ${
                   isActive
                     ? "bg-zinc-800 text-zinc-100"
                     : "text-zinc-400 hover:bg-zinc-900/70 hover:text-zinc-200"
@@ -112,7 +131,7 @@ export function Sidebar({
         </h2>
         <div className="space-y-1 overflow-y-auto pr-1">
           {chats.length === 0 && (
-            <p className="rounded-lg bg-zinc-900/60 px-3 py-2 text-xs text-zinc-500">
+            <p className="rounded-[2px] bg-zinc-900/60 px-3 py-2 text-xs text-zinc-500">
               No chats yet.
             </p>
           )}
@@ -122,7 +141,7 @@ export function Sidebar({
             return (
               <div
                 key={chat.id}
-                className={`group flex items-start gap-1 rounded-lg px-1 py-1 transition ${
+                className={`group flex items-start gap-1 rounded-[2px] px-1 py-1 transition ${
                   isActive ? "bg-zinc-800/90 text-zinc-100" : "text-zinc-400 hover:bg-zinc-900/70"
                 }`}
               >

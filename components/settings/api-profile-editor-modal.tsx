@@ -86,7 +86,7 @@ export function ApiProfileEditorModal({
       <form
         key={`${title}-${initialValue.name}-${initialValue.provider}-${initialValue.model}`}
         onSubmit={handleSubmit}
-        className="w-full max-w-xl rounded-2xl bg-zinc-900 p-5"
+        className="w-full max-w-xl rounded-[2px] bg-zinc-900 p-5"
       >
         <h3 className="text-base font-medium text-zinc-100">{title}</h3>
 
@@ -99,7 +99,7 @@ export function ApiProfileEditorModal({
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="My OpenAI"
-              className="w-full rounded-xl bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
+              className="w-full rounded-[2px] bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
             />
           </div>
 
@@ -110,7 +110,7 @@ export function ApiProfileEditorModal({
             <select
               value={provider}
               onChange={(event) => setProvider(event.target.value)}
-              className="w-full rounded-xl bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none"
+              className="w-full rounded-[2px] bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none"
             >
               {providerOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -128,7 +128,7 @@ export function ApiProfileEditorModal({
               <select
                 value={model}
                 onChange={(event) => setModel(event.target.value)}
-                className="w-full rounded-xl bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none"
+                className="w-full rounded-[2px] bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none"
               >
                 <option value="">Select model</option>
                 {models.map((modelId) => (
@@ -142,7 +142,7 @@ export function ApiProfileEditorModal({
                 value={model}
                 onChange={(event) => setModel(event.target.value)}
                 placeholder="Enter model id"
-                className="w-full rounded-xl bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
+                className="w-full rounded-[2px] bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
               />
             )}
             <div className="mt-2">
@@ -150,7 +150,7 @@ export function ApiProfileEditorModal({
                 type="button"
                 onClick={() => void loadModels(provider, apiKey)}
                 disabled={modelsLoading}
-                className="rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {modelsLoading ? "Loading..." : "Fetch models"}
               </button>
@@ -167,7 +167,7 @@ export function ApiProfileEditorModal({
               value={apiKey}
               onChange={(event) => setApiKey(event.target.value)}
               placeholder="sk-..."
-              className="w-full rounded-xl bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
+              className="w-full rounded-[2px] bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
             />
           </div>
         </div>
@@ -176,13 +176,13 @@ export function ApiProfileEditorModal({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-700"
+            className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-700"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="rounded-lg border border-zinc-600 bg-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-100 hover:bg-zinc-600"
+            className="rounded-[2px] border border-zinc-600 bg-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-100 hover:bg-zinc-600"
           >
             Save
           </button>

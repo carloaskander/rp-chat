@@ -39,7 +39,7 @@ export function SettingsForm() {
 
       {activeTab === "appearance" && (
         <section className="px-5 pb-6">
-          <div className="rounded-xl bg-zinc-900/60 p-4 text-sm text-zinc-400">
+          <div className="rounded-[2px] bg-zinc-900/60 p-4 text-sm text-zinc-400">
             Appearance settings coming soon.
           </div>
         </section>
@@ -47,7 +47,7 @@ export function SettingsForm() {
 
       {activeTab === "advanced" && (
         <section className="px-5 pb-6">
-          <div className="rounded-xl bg-zinc-900/60 p-4 text-sm text-zinc-400">
+          <div className="rounded-[2px] bg-zinc-900/60 p-4 text-sm text-zinc-400">
             Advanced settings coming soon.
           </div>
         </section>
@@ -55,7 +55,7 @@ export function SettingsForm() {
 
       {activeTab === "about" && (
         <section className="px-5 pb-6">
-          <div className="rounded-xl bg-zinc-900/60 p-4 text-sm text-zinc-400">
+          <div className="rounded-[2px] bg-zinc-900/60 p-4 text-sm text-zinc-400">
             RP Chat MVP. Local-only settings, no backend/auth yet.
           </div>
         </section>

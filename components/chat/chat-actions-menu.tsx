@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Ellipsis } from "lucide-react";
 
 interface ChatActionsMenuProps {
   onRenameChat?: () => void;
@@ -81,22 +82,14 @@ export function ChatActionsMenu({
         onClick={() => setOpen((prev) => !prev)}
         className={`px-1 text-zinc-500 transition hover:text-zinc-200 ${triggerClassName ?? ""}`}
       >
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          className="h-6 w-6 fill-current"
-        >
-          <circle cx="6" cy="12" r="1.9" />
-          <circle cx="12" cy="12" r="1.9" />
-          <circle cx="18" cy="12" r="1.9" />
-        </svg>
+        <Ellipsis aria-hidden="true" className="h-6 w-6" />
       </button>
 
       {open &&
         createPortal(
           <div
             ref={menuRef}
-            className="fixed z-[100] min-w-44 rounded-lg border border-zinc-700 bg-zinc-900 p-1 shadow-lg shadow-black/40"
+            className="fixed z-[100] min-w-44 rounded-[2px] border border-zinc-700 bg-zinc-900 p-1 shadow-lg shadow-black/40"
             style={{ top: menuPosition.top, left: menuPosition.left }}
           >
             {onRenameChat && (
@@ -106,7 +99,7 @@ export function ChatActionsMenu({
                   onRenameChat();
                   setOpen(false);
                 }}
-                className="w-full rounded-md px-3 py-2 text-left text-sm text-zinc-200 hover:bg-zinc-800"
+                className="w-full rounded-[2px] px-3 py-2 text-left text-sm text-zinc-200 hover:bg-zinc-800"
               >
                 Rename chat
               </button>
@@ -117,7 +110,7 @@ export function ChatActionsMenu({
                 onEditChatSettings();
                 setOpen(false);
               }}
-              className="w-full rounded-md px-3 py-2 text-left text-sm text-zinc-200 hover:bg-zinc-800"
+              className="w-full rounded-[2px] px-3 py-2 text-left text-sm text-zinc-200 hover:bg-zinc-800"
             >
               Edit chat settings
             </button>
@@ -131,7 +124,7 @@ export function ChatActionsMenu({
                   }
                   setOpen(false);
                 }}
-                className="w-full rounded-md px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800"
+                className="w-full rounded-[2px] px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800"
               >
                 Delete chat
               </button>
