@@ -30,6 +30,7 @@ export function ChatPanel({
   const [inputValue, setInputValue] = useState("");
   const [keyboardInset, setKeyboardInset] = useState(0);
   const [inputBarHeight, setInputBarHeight] = useState(88);
+  const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -91,6 +92,7 @@ export function ChatPanel({
     const nextHeight = Math.min(el.scrollHeight, TEXTAREA_MAX_HEIGHT);
     el.style.height = `${nextHeight}px`;
     el.style.overflowY = el.scrollHeight > TEXTAREA_MAX_HEIGHT ? "auto" : "hidden";
+    setIsComposerExpanded(nextHeight > 36);
   }, [inputValue]);
 
   const submitCurrentInput = () => {
@@ -219,7 +221,11 @@ export function ChatPanel({
           paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
         }}
       >
-        <div className="grid w-full max-w-full grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-full border border-zinc-800/80 bg-zinc-900/90 px-3 py-2 backdrop-blur">
+        <div
+          className={`grid w-full max-w-full grid-cols-[minmax(0,1fr)_auto] gap-2 border border-zinc-800/80 bg-zinc-900/90 px-3 py-2 backdrop-blur ${
+            isComposerExpanded ? "rounded-[22px]" : "rounded-full"
+          }`}
+        >
           <div className="flex min-h-0 min-w-0 items-center overflow-hidden px-1">
             <textarea
               ref={textareaRef}
