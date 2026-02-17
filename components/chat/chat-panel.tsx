@@ -27,12 +27,58 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const TEXTAREA_MAX_HEIGHT = 168;
   const [inputValue, setInputValue] = useState("");
+  const [keyboardInset, setKeyboardInset] = useState(0);
+  const [inputBarHeight, setInputBarHeight] = useState(88);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [chat?.messages.length]);
+
+  useEffect(() => {
+    const formEl = formRef.current;
+    if (!formEl || typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    const observer = new ResizeObserver(() => {
+      setInputBarHeight(formEl.offsetHeight);
+    });
+
+    observer.observe(formEl);
+    setInputBarHeight(formEl.offsetHeight);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) {
+      return;
+    }
+
+    const viewport = window.visualViewport;
+
+    const updateInset = () => {
+      const occludedHeight = Math.max(
+        0,
+        window.innerHeight - (viewport.height + viewport.offsetTop),
+      );
+      setKeyboardInset(occludedHeight);
+    };
+
+    updateInset();
+    viewport.addEventListener("resize", updateInset);
+    viewport.addEventListener("scroll", updateInset);
+    window.addEventListener("resize", updateInset);
+
+    return () => {
+      viewport.removeEventListener("resize", updateInset);
+      viewport.removeEventListener("scroll", updateInset);
+      window.removeEventListener("resize", updateInset);
+    };
+  }, []);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -96,7 +142,10 @@ export function ChatPanel({
         )}
       </header>
 
-      <div className="min-h-0 flex-1 w-full space-y-4 overflow-y-auto px-5 py-4 sm:mx-auto sm:max-w-3xl sm:px-8 sm:py-6">
+      <div
+        className="min-h-0 flex-1 w-full space-y-4 overflow-y-auto px-5 py-4 sm:mx-auto sm:max-w-3xl sm:px-8 sm:py-6 md:pb-6"
+        style={{ paddingBottom: inputBarHeight + 16 }}
+      >
         {setupRequired ? (
           <div className="mx-auto mt-16 max-w-md text-center">
             <p className="text-sm text-zinc-400">
@@ -157,10 +206,15 @@ export function ChatPanel({
       </div>
 
       <form
+        ref={formRef}
         onSubmit={handleSubmit}
-        className="shrink-0 w-full px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:mx-auto sm:max-w-3xl sm:px-6 sm:pb-6"
+        className="fixed inset-x-0 z-20 shrink-0 w-full px-4 pt-2 sm:mx-auto sm:max-w-3xl sm:px-6 md:static md:px-6 md:pb-6"
+        style={{
+          bottom: keyboardInset,
+          paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
+        }}
       >
-        <div className="grid w-full max-w-full grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-[24px] border border-zinc-800/80 bg-zinc-900/90 px-3 py-2 shadow-[0_10px_24px_rgba(0,0,0,0.32)] backdrop-blur">
+        <div className="grid w-full max-w-full grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-[24px] border border-zinc-800/80 bg-zinc-900/90 px-3 py-2 backdrop-blur">
           <div className="flex min-h-0 min-w-0 items-center overflow-hidden px-1">
             <textarea
               ref={textareaRef}
@@ -171,7 +225,7 @@ export function ChatPanel({
               disabled={inputDisabled || isThinking}
               placeholder={
                 inputDisabled
-                  ? "Select an API profile in Chat Settings..."
+                  ? "Select chat settings..."
                   : isThinking
                     ? "Thinking..."
                     : "Type your message..."

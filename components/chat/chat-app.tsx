@@ -433,7 +433,7 @@ export function ChatApp() {
           onEditChatSettings={handleOpenChatSettings}
           onDeleteChat={handleDeleteChat}
           onRenameChat={handleRenameChat}
-          className={`fixed inset-y-0 left-0 z-40 flex w-[85vw] max-w-72 flex-col bg-zinc-950 px-2 py-2 shadow-2xl transition-transform md:static md:z-auto md:w-full md:max-w-72 md:translate-x-0 md:shadow-none ${
+          className={`fixed inset-y-0 left-0 z-40 flex w-[85vw] max-w-72 flex-col bg-transparent px-2 py-2 shadow-2xl transition-transform md:static md:z-auto md:w-full md:max-w-72 md:translate-x-0 md:shadow-none ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         />
