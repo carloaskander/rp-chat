@@ -19,6 +19,7 @@ export interface ChatSession {
   id: string;
   title: string;
   messages: ChatMessage[];
+  storySummary: string | null;
   apiProfileId: string | null;
   characterPresetId: string | null;
   instructionPresetId: string | null;

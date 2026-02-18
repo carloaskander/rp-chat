@@ -6,6 +6,15 @@ interface GenerateReplyParams {
   messages: ChatMessage[];
   instructionContent?: string;
   characterContent?: string;
+  storySummary?: string | null;
+}
+
+interface GenerateStorySummaryParams {
+  profile: ApiProfile;
+  existingSummary: string | null;
+  messagesToCondense: ChatMessage[];
+  instructionContent?: string;
+  characterContent?: string;
 }
 
 class ApiRequestError extends Error {
@@ -26,7 +35,11 @@ function normalizeApiKey(raw: string): string {
   return trimmed;
 }
 
-function buildSystemPrompt(instructionContent?: string, characterContent?: string): string {
+function buildSystemPrompt(
+  instructionContent?: string,
+  characterContent?: string,
+  storySummary?: string | null,
+): string {
   const parts: string[] = [];
 
   if (instructionContent?.trim()) {
@@ -35,8 +48,61 @@ function buildSystemPrompt(instructionContent?: string, characterContent?: strin
   if (characterContent?.trim()) {
     parts.push(`Character preset:\n${characterContent.trim()}`);
   }
+  if (storySummary?.trim()) {
+    parts.push(
+      [
+        "Story memory summary (living canon):",
+        storySummary.trim(),
+        "Treat this as established context unless the latest messages clearly contradict it.",
+      ].join("\n"),
+    );
+  }
 
   return parts.join("\n\n");
+}
+
+function buildSummarizationSystemPrompt(
+  instructionContent?: string,
+  characterContent?: string,
+): string {
+  const basePrompt = buildSystemPrompt(instructionContent, characterContent);
+  const summaryRules = [
+    "You maintain a living story memory for a roleplay chat.",
+    "Update the existing summary using: (1) prior summary memory and (2) older messages being condensed.",
+    "Preserve character identities, relationships, emotional states, motivations, key beats, decisions, unresolved conflicts/goals, and world/location state.",
+    "Preserve continuity and roleplay tone; this memory guides future in-character responses.",
+    "Treat this as story memory, not a transcript log.",
+    "Keep important established facts unless clearly contradicted by newer events.",
+    "Remove filler dialogue, repetition, and minor temporary details.",
+    "Return only the updated summary text.",
+  ].join("\n");
+
+  return basePrompt ? `${basePrompt}\n\n${summaryRules}` : summaryRules;
+}
+
+function buildSummarizationUserPrompt(
+  existingSummary: string | null,
+  messagesToCondense: ChatMessage[],
+): string {
+  const previousSummary = existingSummary?.trim()
+    ? existingSummary.trim()
+    : "(none)";
+  const transcript = messagesToCondense
+    .map((message) => {
+      const speaker = message.role === "assistant" ? "Assistant" : "User";
+      return `${speaker}: ${message.content}`;
+    })
+    .join("\n\n");
+
+  return [
+    "Update this living roleplay summary.",
+    "Do not rewrite or include recent turns that are not provided here; this request only covers older messages.",
+    "Prefer concise narrative prose; bullets are optional only when they improve clarity.",
+    "\nExisting summary:\n",
+    previousSummary,
+    "\nMessages to condense:\n",
+    transcript,
+  ].join("\n");
 }
 
 function mapToOpenAIMessages(messages: ChatMessage[]) {
@@ -170,13 +236,11 @@ async function callGoogle(
   return text;
 }
 
-export async function generateAssistantReply({
-  profile,
-  messages,
-  instructionContent,
-  characterContent,
-}: GenerateReplyParams): Promise<string> {
-  const systemPrompt = buildSystemPrompt(instructionContent, characterContent);
+async function generateWithProvider(
+  profile: ApiProfile,
+  messages: ChatMessage[],
+  systemPrompt: string,
+): Promise<string> {
   const provider = profile.provider.trim().toLowerCase();
   const apiKey = normalizeApiKey(profile.apiKey);
 
@@ -239,4 +303,41 @@ export async function generateAssistantReply({
   }
 
   throw new Error(`Unsupported provider: ${profile.provider}`);
+}
+
+export async function generateAssistantReply({
+  profile,
+  messages,
+  instructionContent,
+  characterContent,
+  storySummary,
+}: GenerateReplyParams): Promise<string> {
+  const systemPrompt = buildSystemPrompt(
+    instructionContent,
+    characterContent,
+    storySummary,
+  );
+
+  return generateWithProvider(profile, messages, systemPrompt);
+}
+
+export async function generateStorySummary({
+  profile,
+  existingSummary,
+  messagesToCondense,
+  instructionContent,
+  characterContent,
+}: GenerateStorySummaryParams): Promise<string> {
+  const systemPrompt = buildSummarizationSystemPrompt(
+    instructionContent,
+    characterContent,
+  );
+  const summaryRequest: ChatMessage = {
+    id: "story-summary-request",
+    role: "user",
+    content: buildSummarizationUserPrompt(existingSummary, messagesToCondense),
+    createdAt: Date.now(),
+  };
+
+  return generateWithProvider(profile, [summaryRequest], systemPrompt);
 }

@@ -41,6 +41,7 @@ export function createEmptyChatSession(index: number): ChatSession {
     createdAt: now,
     updatedAt: now,
     messages: [],
+    storySummary: null,
   };
 }
 

@@ -16,6 +16,16 @@ interface ChatPanelProps {
   onOpenChatSettings: () => void;
 }
 
+const SUMMARY_NOTICE_PREFIX = "[summary-notice]";
+
+function isSummaryNotice(content: string): boolean {
+  return content.startsWith(SUMMARY_NOTICE_PREFIX);
+}
+
+function formatSummaryNotice(content: string): string {
+  return content.replace(SUMMARY_NOTICE_PREFIX, "").trim();
+}
+
 export function ChatPanel({
   chat,
   modelLabel,
@@ -174,6 +184,9 @@ export function ChatPanel({
               const isTransportError =
                 message.role === "assistant" &&
                 message.content.startsWith("Request failed:");
+              const isSummarySystemNotice =
+                message.role === "assistant" &&
+                isSummaryNotice(message.content);
 
               return (
                 <div
@@ -182,7 +195,11 @@ export function ChatPanel({
                     message.role === "user" ? "justify-end" : "w-full justify-start"
                   }`}
                 >
-                  {message.role === "user" ? (
+                  {isSummarySystemNotice ? (
+                    <p className="mx-auto text-center text-xs text-zinc-500">
+                      {formatSummaryNotice(message.content)}
+                    </p>
+                  ) : message.role === "user" ? (
                     <div className="max-w-[88%] rounded-2xl bg-zinc-800 px-4 py-3 text-[15px] leading-relaxed text-zinc-100 sm:max-w-[78%] sm:text-sm">
                       {message.content}
                     </div>

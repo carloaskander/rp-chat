@@ -50,6 +50,7 @@ export const DEFAULT_CHAT_SESSIONS: ChatSession[] = [
     settingsConfigured: true,
     createdAt: DEFAULT_TIMESTAMP,
     updatedAt: DEFAULT_TIMESTAMP,
+    storySummary: null,
     messages: [
       {
         id: "msg-welcome-1",

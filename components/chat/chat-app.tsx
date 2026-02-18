@@ -6,16 +6,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Cog, Menu, SlidersHorizontal } from "lucide-react";
 
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
-import { generateAssistantReply } from "@/lib/ai-client";
+import { generateAssistantReply, generateStorySummary } from "@/lib/ai-client";
 import { buildChatTitle, createEmptyChatSession, createId } from "@/lib/chat-utils";
 import {
   DEFAULT_CHARACTER_PRESETS,
   DEFAULT_CHAT_SESSIONS,
   DEFAULT_INSTRUCTION_PRESETS,
-  DEFAULT_SETTINGS,
 } from "@/lib/mock-data";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
-import { ChatMessage, Preset, SidebarView } from "@/types/chat";
+import { ChatMessage, ChatSession, Preset, SidebarView } from "@/types/chat";
 import { ApiProfile } from "@/types/settings";
 
 import { CharacterPresetSelector } from "./character-preset-selector";
@@ -24,9 +23,107 @@ import { ChatPanel } from "./chat-panel";
 import { InstructionPresetSelector } from "./instruction-preset-selector";
 import { Sidebar } from "./sidebar";
 
+const ESTIMATED_CONTEXT_LIMIT_TOKENS = 8000;
+const SUMMARY_TRIGGER_USAGE_RATIO = 0.68;
+const SUMMARY_TRIGGER_TOKEN_ESTIMATE = Math.floor(
+  ESTIMATED_CONTEXT_LIMIT_TOKENS * SUMMARY_TRIGGER_USAGE_RATIO,
+);
+const SUMMARY_RESPONSE_BUFFER_TOKENS =
+  ESTIMATED_CONTEXT_LIMIT_TOKENS - SUMMARY_TRIGGER_TOKEN_ESTIMATE;
+const SUMMARY_KEEP_RECENT_TOKEN_ESTIMATE = 1400;
+const SUMMARY_MIN_CONDENSE_TOKEN_ESTIMATE = 900;
+const TOKEN_ESTIMATE_CHARS_PER_TOKEN = 4;
+const TOKEN_ESTIMATE_MESSAGE_OVERHEAD = 8;
+const SUMMARY_NOTICE_PREFIX = "[summary-notice]";
+const SUMMARY_NOTICE_TEXT = "Earlier messages were summarized for context efficiency.";
+
+function isTransportFailure(message: ChatMessage): boolean {
+  return (
+    message.role === "assistant" &&
+    message.content.startsWith("Request failed:")
+  );
+}
+
+function isSummaryNotice(message: ChatMessage): boolean {
+  return (
+    message.role === "assistant" &&
+    message.content.startsWith(SUMMARY_NOTICE_PREFIX)
+  );
+}
+
+function createSummaryNoticeMessage(): ChatMessage {
+  return {
+    id: createId(),
+    role: "assistant",
+    content: SUMMARY_NOTICE_PREFIX + " " + SUMMARY_NOTICE_TEXT,
+    createdAt: Date.now(),
+  };
+}
+
+function estimateMessageTokens(message: ChatMessage): number {
+  return Math.ceil(message.content.length / TOKEN_ESTIMATE_CHARS_PER_TOKEN)
+    + TOKEN_ESTIMATE_MESSAGE_OVERHEAD;
+}
+
+function estimateMessagesTokens(messages: ChatMessage[]): number {
+  return messages.reduce(
+    (total, message) => total + estimateMessageTokens(message),
+    0,
+  );
+}
+
+function isModelContextMessage(message: ChatMessage): boolean {
+  return !isTransportFailure(message) && !isSummaryNotice(message);
+}
+
+function findRecentMessageStartIndex(
+  messages: ChatMessage[],
+  keepRecentTokenBudget: number,
+): number {
+  let recentTokenEstimate = 0;
+
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+
+    if (isModelContextMessage(message)) {
+      recentTokenEstimate += estimateMessageTokens(message);
+    }
+
+    if (recentTokenEstimate >= keepRecentTokenBudget) {
+      return index;
+    }
+  }
+
+  return 0;
+}
+
+function findMandatoryPreserveStartIndex(messages: ChatMessage[]): number {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+
+    if (message.role === "user" && isModelContextMessage(message)) {
+      return index;
+    }
+  }
+
+  return Math.max(messages.length - 1, 0);
+}
+
+function findCondenseFromIndex(
+  messages: ChatMessage[],
+  keepRecentTokenBudget: number,
+): number {
+  const budgetStartIndex = findRecentMessageStartIndex(
+    messages,
+    keepRecentTokenBudget,
+  );
+  const mandatoryPreserveStartIndex = findMandatoryPreserveStartIndex(messages);
+
+  return Math.min(budgetStartIndex, mandatoryPreserveStartIndex);
+}
+
 export function ChatApp() {
   const router = useRouter();
-  const [settings] = useLocalStorageState(STORAGE_KEYS.settings, DEFAULT_SETTINGS);
   const [chats, setChats] = useLocalStorageState(STORAGE_KEYS.chats, DEFAULT_CHAT_SESSIONS);
   const [activeChatId, setActiveChatId] = useLocalStorageState<string | null>(
     STORAGE_KEYS.activeChatId,
@@ -55,7 +152,8 @@ export function ChatApp() {
           chat.settingsConfigured === undefined ||
           chat.apiProfileId === undefined ||
           chat.characterPresetId === undefined ||
-          chat.instructionPresetId === undefined
+          chat.instructionPresetId === undefined ||
+          chat.storySummary === undefined
         ) {
           changed = true;
           return {
@@ -63,6 +161,7 @@ export function ChatApp() {
             apiProfileId: chat.apiProfileId ?? null,
             characterPresetId: chat.characterPresetId ?? null,
             instructionPresetId: chat.instructionPresetId ?? null,
+            storySummary: chat.storySummary ?? null,
             settingsConfigured:
               chat.settingsConfigured ?? Boolean(chat.apiProfileId ?? null),
           };
@@ -172,6 +271,130 @@ export function ChatApp() {
     );
   };
 
+  const maybeSummarizeChat = async (params: {
+    chatSnapshot: ChatSession;
+    profile: ApiProfile;
+    instructionContent?: string;
+    characterContent?: string;
+  }) => {
+    const { chatSnapshot, profile, instructionContent, characterContent } = params;
+
+    const lastContextMessage = [...chatSnapshot.messages]
+      .reverse()
+      .find((message) => isModelContextMessage(message));
+
+    // Never summarize mid-turn; only summarize after an assistant response exists.
+    if (!lastContextMessage || lastContextMessage.role !== "assistant") {
+      return;
+    }
+
+    const summarizableMessages = chatSnapshot.messages.filter((message) =>
+      isModelContextMessage(message),
+    );
+    const totalTokenEstimate = estimateMessagesTokens(summarizableMessages);
+
+    if (totalTokenEstimate < SUMMARY_TRIGGER_TOKEN_ESTIMATE) {
+      return;
+    }
+
+    const condenseFromIndex = findCondenseFromIndex(
+      chatSnapshot.messages,
+      Math.min(
+        SUMMARY_KEEP_RECENT_TOKEN_ESTIMATE,
+        ESTIMATED_CONTEXT_LIMIT_TOKENS - SUMMARY_RESPONSE_BUFFER_TOKENS,
+      ),
+    );
+
+    if (condenseFromIndex <= 0) {
+      return;
+    }
+
+    const messagesToCondense = chatSnapshot.messages
+      .slice(0, condenseFromIndex)
+      .filter((message) => isModelContextMessage(message));
+
+    if (estimateMessagesTokens(messagesToCondense) < SUMMARY_MIN_CONDENSE_TOKEN_ESTIMATE) {
+      return;
+    }
+
+    try {
+      const updatedSummary = await generateStorySummary({
+        profile,
+        existingSummary: chatSnapshot.storySummary,
+        messagesToCondense,
+        instructionContent,
+        characterContent,
+      });
+      const nextSummary = updatedSummary.trim();
+
+      if (!nextSummary) {
+        return;
+      }
+
+      setChats((prev) =>
+        prev.map((chat) => {
+          if (chat.id !== chatSnapshot.id) {
+            return chat;
+          }
+
+          const latestLastContextMessage = [...chat.messages]
+            .reverse()
+            .find((message) => isModelContextMessage(message));
+
+          if (!latestLastContextMessage || latestLastContextMessage.role !== "assistant") {
+            return chat;
+          }
+
+          const latestSummarizableMessages = chat.messages.filter((message) =>
+            isModelContextMessage(message),
+          );
+          const latestTokenEstimate = estimateMessagesTokens(latestSummarizableMessages);
+
+          if (latestTokenEstimate < SUMMARY_TRIGGER_TOKEN_ESTIMATE) {
+            return chat;
+          }
+
+          const latestCondenseFromIndex = findCondenseFromIndex(
+            chat.messages,
+            Math.min(
+              SUMMARY_KEEP_RECENT_TOKEN_ESTIMATE,
+              ESTIMATED_CONTEXT_LIMIT_TOKENS - SUMMARY_RESPONSE_BUFFER_TOKENS,
+            ),
+          );
+
+          if (latestCondenseFromIndex <= 0) {
+            return chat;
+          }
+
+          const latestMessagesToCondense = chat.messages
+            .slice(0, latestCondenseFromIndex)
+            .filter((message) => isModelContextMessage(message));
+
+          if (
+            estimateMessagesTokens(latestMessagesToCondense)
+            < SUMMARY_MIN_CONDENSE_TOKEN_ESTIMATE
+          ) {
+            return chat;
+          }
+
+          const nextRecentMessages = chat.messages
+            .slice(latestCondenseFromIndex)
+            .filter((message) => !isSummaryNotice(message));
+          const nextMessages = [createSummaryNoticeMessage(), ...nextRecentMessages];
+
+          return {
+            ...chat,
+            storySummary: nextSummary,
+            messages: nextMessages,
+            updatedAt: Date.now(),
+          };
+        }),
+      );
+    } catch (error) {
+      console.error("Story summarization failed", error);
+    }
+  };
+
   const handleSendMessage = async (content: string) => {
     if (!activeChatId) {
       return;
@@ -230,11 +453,7 @@ export function ChatApp() {
 
     try {
       const messagesForModel = [...targetChat.messages, userMessage].filter(
-        (message) =>
-          !(
-            message.role === "assistant" &&
-            message.content.startsWith("Request failed:")
-          ),
+        (message) => isModelContextMessage(message),
       );
 
       const reply = await generateAssistantReply({
@@ -242,6 +461,7 @@ export function ChatApp() {
         messages: messagesForModel,
         instructionContent: selectedInstructionPreset?.content,
         characterContent: selectedCharacterPreset?.content,
+        storySummary: targetChat.storySummary,
       });
 
       const assistantMessage: ChatMessage = {
@@ -249,6 +469,16 @@ export function ChatApp() {
         role: "assistant",
         content: reply,
         createdAt: Date.now(),
+      };
+
+      const chatAfterAssistant: ChatSession = {
+        ...targetChat,
+        messages: [...targetChat.messages, userMessage, assistantMessage],
+        title: buildChatTitle(
+          [...targetChat.messages, userMessage, assistantMessage],
+          1,
+        ),
+        updatedAt: Date.now(),
       };
 
       setChats((prev) =>
@@ -267,6 +497,13 @@ export function ChatApp() {
           };
         }),
       );
+
+      void maybeSummarizeChat({
+        chatSnapshot: chatAfterAssistant,
+        profile: selectedProfile,
+        instructionContent: selectedInstructionPreset?.content,
+        characterContent: selectedCharacterPreset?.content,
+      });
     } catch (error) {
       const assistantMessage: ChatMessage = {
         id: createId(),
