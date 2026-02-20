@@ -35,7 +35,8 @@ const SUMMARY_MIN_CONDENSE_TOKEN_ESTIMATE = 900;
 const TOKEN_ESTIMATE_CHARS_PER_TOKEN = 4;
 const TOKEN_ESTIMATE_MESSAGE_OVERHEAD = 8;
 const SUMMARY_NOTICE_PREFIX = "[summary-notice]";
-const SUMMARY_NOTICE_TEXT = "Earlier messages were summarized for context efficiency.";
+const SUMMARY_NOTICE_TEXT =
+  "Earlier parts of this conversation were summarized to keep context efficient.";
 
 function isTransportFailure(message: ChatMessage): boolean {
   return (
@@ -276,8 +277,15 @@ export function ChatApp() {
     profile: ApiProfile;
     instructionContent?: string;
     characterContent?: string;
+    force?: boolean;
   }) => {
-    const { chatSnapshot, profile, instructionContent, characterContent } = params;
+    const {
+      chatSnapshot,
+      profile,
+      instructionContent,
+      characterContent,
+      force = false,
+    } = params;
 
     const lastContextMessage = [...chatSnapshot.messages]
       .reverse()
@@ -293,7 +301,7 @@ export function ChatApp() {
     );
     const totalTokenEstimate = estimateMessagesTokens(summarizableMessages);
 
-    if (totalTokenEstimate < SUMMARY_TRIGGER_TOKEN_ESTIMATE) {
+    if (!force && totalTokenEstimate < SUMMARY_TRIGGER_TOKEN_ESTIMATE) {
       return;
     }
 
@@ -313,7 +321,10 @@ export function ChatApp() {
       .slice(0, condenseFromIndex)
       .filter((message) => isModelContextMessage(message));
 
-    if (estimateMessagesTokens(messagesToCondense) < SUMMARY_MIN_CONDENSE_TOKEN_ESTIMATE) {
+    if (
+      !force &&
+      estimateMessagesTokens(messagesToCondense) < SUMMARY_MIN_CONDENSE_TOKEN_ESTIMATE
+    ) {
       return;
     }
 
@@ -350,7 +361,7 @@ export function ChatApp() {
           );
           const latestTokenEstimate = estimateMessagesTokens(latestSummarizableMessages);
 
-          if (latestTokenEstimate < SUMMARY_TRIGGER_TOKEN_ESTIMATE) {
+          if (!force && latestTokenEstimate < SUMMARY_TRIGGER_TOKEN_ESTIMATE) {
             return chat;
           }
 
@@ -371,6 +382,7 @@ export function ChatApp() {
             .filter((message) => isModelContextMessage(message));
 
           if (
+            !force &&
             estimateMessagesTokens(latestMessagesToCondense)
             < SUMMARY_MIN_CONDENSE_TOKEN_ESTIMATE
           ) {
@@ -380,7 +392,7 @@ export function ChatApp() {
           const nextRecentMessages = chat.messages
             .slice(latestCondenseFromIndex)
             .filter((message) => !isSummaryNotice(message));
-          const nextMessages = [createSummaryNoticeMessage(), ...nextRecentMessages];
+          const nextMessages = [...nextRecentMessages, createSummaryNoticeMessage()];
 
           return {
             ...chat,
@@ -393,6 +405,43 @@ export function ChatApp() {
     } catch (error) {
       console.error("Story summarization failed", error);
     }
+  };
+
+  const handleSlashCommand = async (commandId: string) => {
+    if (commandId !== "summarize" || !activeChatId) {
+      return;
+    }
+
+    const targetChat = chats.find((chat) => chat.id === activeChatId);
+    if (!targetChat || !targetChat.apiProfileId) {
+      if (!hasApiProfiles) {
+        router.push("/settings");
+        return;
+      }
+      setChatSettingsChatId(activeChatId);
+      return;
+    }
+
+    const selectedProfile = apiProfiles.find((profile) => profile.id === targetChat.apiProfileId);
+    if (!selectedProfile || !selectedProfile.apiKey.trim()) {
+      setChatSettingsChatId(activeChatId);
+      return;
+    }
+
+    const selectedInstructionPreset = instructionPresets.find(
+      (preset) => preset.id === targetChat.instructionPresetId,
+    );
+    const selectedCharacterPreset = characterPresets.find(
+      (preset) => preset.id === targetChat.characterPresetId,
+    );
+
+    await maybeSummarizeChat({
+      chatSnapshot: targetChat,
+      profile: selectedProfile,
+      instructionContent: selectedInstructionPreset?.content,
+      characterContent: selectedCharacterPreset?.content,
+      force: true,
+    });
   };
 
   const handleSendMessage = async (content: string) => {
@@ -707,6 +756,7 @@ export function ChatApp() {
               hasApiProfiles={hasApiProfiles}
               isThinking={isActiveChatThinking}
               onSendMessage={handleSendMessage}
+              onRunSlashCommand={handleSlashCommand}
               onOpenChatSettings={() => {
                 if (activeChat) {
                   handleOpenChatSettings(activeChat.id);
