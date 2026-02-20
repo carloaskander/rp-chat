@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
-import { ArrowUp, SlidersHorizontal } from "lucide-react";
+import { ArrowUp, ChevronDown, SlidersHorizontal } from "lucide-react";
 
 import { ChatSession } from "@/types/chat";
 
@@ -33,6 +33,113 @@ function isSummaryNotice(content: string): boolean {
 
 function formatSummaryNotice(content: string): string {
   return content.replace(SUMMARY_NOTICE_PREFIX, "").trim();
+}
+
+interface SummaryNoticeProps {
+  noticeText: string;
+  summary: string | null | undefined;
+  preservedMessagesForDev?: ChatSession["messages"];
+}
+
+function SummaryNotice({
+  noticeText,
+  summary,
+  preservedMessagesForDev = [],
+}: SummaryNoticeProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [preservedExpanded, setPreservedExpanded] = useState(false);
+  const canExpand = Boolean(summary?.trim());
+
+  return (
+    <div className="mx-auto w-full max-w-3xl">
+      <div className="rounded-[2px] border border-zinc-800/80 bg-zinc-900/55 px-3 py-2 text-xs text-zinc-400">
+        <div className="flex items-center justify-between gap-3">
+          <p className="font-medium tracking-wide text-zinc-400">{noticeText}</p>
+          {canExpand && (
+            <button
+              type="button"
+              onClick={() => {
+                setExpanded((prev) => {
+                  const next = !prev;
+                  if (!next) {
+                    setPreservedExpanded(false);
+                  }
+                  return next;
+                });
+              }}
+              className="inline-flex shrink-0 items-center gap-1 text-xs text-zinc-500 transition hover:text-zinc-300"
+            >
+              <span>{expanded ? "Hide summary" : "View summary"}</span>
+              <ChevronDown
+                className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                  expanded ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+          )}
+        </div>
+
+        {canExpand && (
+          <div
+            className={`grid transition-all duration-200 ease-out ${
+              expanded ? "mt-2 grid-rows-[1fr] opacity-100" : "mt-0 grid-rows-[0fr] opacity-0"
+            }`}
+          >
+            <div className="overflow-hidden">
+              <div className="border-t border-zinc-800/80 pt-2 text-sm leading-6 whitespace-pre-wrap text-zinc-300">
+                {summary}
+              </div>
+              <div className="mt-2 border-t border-zinc-800/80 pt-2 text-left text-xs text-zinc-400">
+                <button
+                  type="button"
+                  onClick={() => setPreservedExpanded((prev) => !prev)}
+                  className="inline-flex items-center gap-1 text-xs text-zinc-500 transition hover:text-zinc-300"
+                >
+                  <span>
+                    {preservedExpanded
+                      ? "Hide preserved recent messages"
+                      : "View preserved recent messages"}
+                  </span>
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                      preservedExpanded ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                <div
+                  className={`grid transition-all duration-200 ease-out ${
+                    preservedExpanded
+                      ? "mt-2 grid-rows-[1fr] opacity-100"
+                      : "mt-0 grid-rows-[0fr] opacity-0"
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    {preservedMessagesForDev.length > 0 ? (
+                      <div className="space-y-2 border-t border-zinc-800/80 pt-2">
+                        {preservedMessagesForDev.map((message) => (
+                          <p key={message.id} className="leading-5 whitespace-pre-wrap">
+                            <span className="font-medium text-zinc-300">
+                              {message.role === "assistant" ? "Assistant" : "User"}:
+                            </span>{" "}
+                            {message.content}
+                          </p>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="border-t border-zinc-800/80 pt-2 leading-5 text-zinc-500">
+                        No preserved messages.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function ChatPanel({
@@ -243,7 +350,7 @@ export function ChatPanel({
             </button>
           </div>
         ) : chat?.messages.length ? (
-          chat.messages.map((message) =>
+          chat.messages.map((message, index) =>
             (() => {
               const isTransportError =
                 message.role === "assistant" &&
@@ -260,11 +367,11 @@ export function ChatPanel({
                   }`}
                 >
                   {isSummarySystemNotice ? (
-                    <div className="mx-auto w-full max-w-3xl">
-                      <p className="rounded-[2px] border border-zinc-800/80 bg-zinc-900/55 px-3 py-2 text-center text-xs font-medium tracking-wide text-zinc-400">
-                        {formatSummaryNotice(message.content)}
-                      </p>
-                    </div>
+                    <SummaryNotice
+                      noticeText={formatSummaryNotice(message.content)}
+                      summary={chat?.storySummary}
+                      preservedMessagesForDev={chat?.messages.slice(0, index)}
+                    />
                   ) : message.role === "user" ? (
                     <div className="max-w-[88%] rounded-2xl bg-zinc-800 px-4 py-3 text-[15px] leading-relaxed text-zinc-100 sm:max-w-[78%] sm:text-sm">
                       {message.content}
