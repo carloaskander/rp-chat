@@ -69,6 +69,7 @@ function buildSummarizationSystemPrompt(
   const summaryRules = [
     "You maintain a living story memory for a roleplay chat.",
     "Update the existing summary using: (1) prior summary memory and (2) older messages being condensed.",
+    "Do not restate or summarize instruction preset text or character preset text; those are provided separately at runtime.",
     "Preserve character identities, relationships, emotional states, motivations, key beats, decisions, unresolved conflicts/goals, and world/location state.",
     "Preserve continuity and roleplay tone; this memory guides future in-character responses.",
     "Treat this as story memory, not a transcript log.",
