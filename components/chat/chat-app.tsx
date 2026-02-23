@@ -127,7 +127,7 @@ function findCondenseFromIndex(
 
 export function ChatApp() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [chats, setChats] = useLocalStorageState(STORAGE_KEYS.chats, DEFAULT_CHAT_SESSIONS);
   const [activeChatId, setActiveChatId] = useLocalStorageState<string | null>(
     STORAGE_KEYS.activeChatId,
@@ -178,17 +178,90 @@ export function ChatApp() {
   }, [setChats]);
 
   useEffect(() => {
+    if (isAuthLoading) {
+      return;
+    }
+
+    if (!user) {
+      setChats([]);
+      setActiveChatId(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadChats = async () => {
+      const { data, error } = await supabase
+        .from("chats")
+        .select("id, title, story_summary, created_at, updated_at")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false });
+
+      if (cancelled) {
+        return;
+      }
+
+      if (error) {
+        console.error("Failed to load chats from Supabase.", error);
+        return;
+      }
+
+      const now = Date.now();
+      const nextChats: ChatSession[] = (data ?? []).map((row) => {
+        const createdAt = Date.parse(row.created_at);
+        const updatedAt = Date.parse(row.updated_at);
+
+        return {
+          id: row.id,
+          title: row.title || "New Chat",
+          storySummary: row.story_summary,
+          messages: [],
+          apiProfileId: null,
+          characterPresetId: null,
+          instructionPresetId: null,
+          settingsConfigured: false,
+          createdAt: Number.isNaN(createdAt) ? now : createdAt,
+          updatedAt: Number.isNaN(updatedAt) ? now : updatedAt,
+        };
+      });
+
+      setChats(nextChats);
+      setActiveChatId((prev) => {
+        if (nextChats.length === 0) {
+          return null;
+        }
+
+        if (prev && nextChats.some((chat) => chat.id === prev)) {
+          return prev;
+        }
+
+        return nextChats[0].id;
+      });
+    };
+
+    void loadChats();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthLoading, user, setActiveChatId, setChats]);
+
+  useEffect(() => {
+    if (isAuthLoading || !user) {
+      return;
+    }
+
     if (chats.length === 0) {
-      const freshChat = createEmptyChatSession(1);
-      setChats([freshChat]);
-      setActiveChatId(freshChat.id);
+      if (activeChatId !== null) {
+        setActiveChatId(null);
+      }
       return;
     }
 
     if (!activeChatId || !chats.some((chat) => chat.id === activeChatId)) {
       setActiveChatId(chats[0].id);
     }
-  }, [activeChatId, chats, setActiveChatId, setChats]);
+  }, [activeChatId, chats, isAuthLoading, setActiveChatId, user]);
 
   const sortedChats = useMemo(
     () => [...chats].sort((a, b) => b.updatedAt - a.updatedAt),
