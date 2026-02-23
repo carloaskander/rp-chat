@@ -185,24 +185,23 @@ export function ChatApp() {
 
     if (user?.id) {
       setResolvedUserId((prev) => (prev === user.id ? prev : user.id));
-      return;
     }
-
-    if (lastAuthEvent === "SIGNED_OUT" || lastAuthEvent === "USER_DELETED") {
-      setResolvedUserId(null);
-    }
-  }, [authResolved, lastAuthEvent, user?.id]);
+  }, [authResolved, user?.id]);
 
   useEffect(() => {
     if (!authResolved) {
       return;
     }
 
-    if (!resolvedUserId) {
-      if (lastAuthEvent === "SIGNED_OUT" || lastAuthEvent === "USER_DELETED") {
-        setChats([]);
-        setActiveChatId(null);
-      }
+    if (lastAuthEvent === "SIGNED_OUT" || lastAuthEvent === "USER_DELETED") {
+      setResolvedUserId(null);
+      setChats([]);
+      setActiveChatId(null);
+    }
+  }, [authResolved, lastAuthEvent, setActiveChatId, setChats]);
+
+  useEffect(() => {
+    if (!authResolved || !resolvedUserId) {
       return;
     }
 
@@ -262,7 +261,7 @@ export function ChatApp() {
     return () => {
       cancelled = true;
     };
-  }, [authResolved, lastAuthEvent, resolvedUserId, setActiveChatId, setChats]);
+  }, [authResolved, resolvedUserId, setActiveChatId, setChats]);
 
   useEffect(() => {
     if (!authResolved || !resolvedUserId) {
