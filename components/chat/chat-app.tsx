@@ -14,8 +14,10 @@ import {
   DEFAULT_INSTRUCTION_PRESETS,
 } from "@/lib/mock-data";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { supabase } from "@/lib/supabase";
 import { ChatMessage, ChatSession, Preset, SidebarView } from "@/types/chat";
 import { ApiProfile } from "@/types/settings";
+import { useAuth } from "@/components/auth/auth-provider";
 
 import { CharacterPresetSelector } from "./character-preset-selector";
 import { ChatSettingsModal } from "./chat-settings-modal";
@@ -125,6 +127,7 @@ function findCondenseFromIndex(
 
 export function ChatApp() {
   const router = useRouter();
+  const { user } = useAuth();
   const [chats, setChats] = useLocalStorageState(STORAGE_KEYS.chats, DEFAULT_CHAT_SESSIONS);
   const [activeChatId, setActiveChatId] = useLocalStorageState<string | null>(
     STORAGE_KEYS.activeChatId,
@@ -214,8 +217,43 @@ export function ChatApp() {
   ].join(" · ");
   const isActiveChatThinking = Boolean(activeChat && thinkingChatId === activeChat.id);
 
-  const handleNewChat = () => {
-    const newChat = createEmptyChatSession(chats.length + 1);
+  const handleNewChat = async () => {
+    if (!user) {
+      console.error("Cannot create chat: no authenticated user.");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("chats")
+      .insert({
+        user_id: user.id,
+        title: "New Chat",
+        story_summary: null,
+      })
+      .select("id, title, story_summary, created_at, updated_at")
+      .single();
+
+    if (error || !data) {
+      console.error("Failed to create chat in Supabase.", error);
+      return;
+    }
+
+    const createdAt = Date.parse(data.created_at);
+    const updatedAt = Date.parse(data.updated_at);
+    const now = Date.now();
+    const newChat: ChatSession = {
+      id: data.id,
+      title: data.title || "New Chat",
+      storySummary: data.story_summary,
+      messages: [],
+      apiProfileId: null,
+      characterPresetId: null,
+      instructionPresetId: null,
+      settingsConfigured: false,
+      createdAt: Number.isNaN(createdAt) ? now : createdAt,
+      updatedAt: Number.isNaN(updatedAt) ? now : updatedAt,
+    };
+
     setChats((prev) => [newChat, ...prev]);
     setActiveChatId(newChat.id);
     setActiveView("chat");
