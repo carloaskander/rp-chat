@@ -1,14 +1,23 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 
 import { useAuth } from "@/components/auth/auth-provider";
 
 type AuthMode = "sign-in" | "sign-up";
 
-export function AuthForm() {
+interface AuthFormProps {
+  initialMode?: AuthMode;
+  showModeToggle?: boolean;
+}
+
+export function AuthForm({
+  initialMode = "sign-in",
+  showModeToggle = true,
+}: AuthFormProps) {
   const { user, isLoading, signInWithEmail, signUpWithEmail, signOut } = useAuth();
-  const [mode, setMode] = useState<AuthMode>("sign-in");
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,32 +72,39 @@ export function AuthForm() {
         >
           Sign out
         </button>
+        <div className="text-sm text-zinc-400">
+          <Link href="/" className="text-zinc-300 transition hover:text-zinc-100">
+            Go to chat
+          </Link>
+        </div>
       </section>
     );
   }
 
   return (
     <section className="space-y-4 rounded-[2px] border border-zinc-800 bg-zinc-900/40 px-5 py-4">
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setMode("sign-in")}
-          className={`rounded-[2px] px-2.5 py-1 text-sm ${
-            mode === "sign-in" ? "bg-zinc-700 text-zinc-100" : "bg-zinc-800 text-zinc-300"
-          }`}
-        >
-          Sign in
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("sign-up")}
-          className={`rounded-[2px] px-2.5 py-1 text-sm ${
-            mode === "sign-up" ? "bg-zinc-700 text-zinc-100" : "bg-zinc-800 text-zinc-300"
-          }`}
-        >
-          Sign up
-        </button>
-      </div>
+      {showModeToggle && (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setMode("sign-in")}
+            className={`rounded-[2px] px-2.5 py-1 text-sm ${
+              mode === "sign-in" ? "bg-zinc-700 text-zinc-100" : "bg-zinc-800 text-zinc-300"
+            }`}
+          >
+            Sign in
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("sign-up")}
+            className={`rounded-[2px] px-2.5 py-1 text-sm ${
+              mode === "sign-up" ? "bg-zinc-700 text-zinc-100" : "bg-zinc-800 text-zinc-300"
+            }`}
+          >
+            Sign up
+          </button>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="space-y-1">
@@ -125,6 +141,26 @@ export function AuthForm() {
           {isSubmitting ? "Submitting..." : mode === "sign-up" ? "Create account" : "Sign in"}
         </button>
       </form>
+
+      {!showModeToggle && (
+        <p className="text-sm text-zinc-400">
+          {mode === "sign-up" ? (
+            <>
+              Already have an account?{" "}
+              <Link href="/login" className="text-zinc-300 transition hover:text-zinc-100">
+                Sign in
+              </Link>
+            </>
+          ) : (
+            <>
+              Need an account?{" "}
+              <Link href="/signup" className="text-zinc-300 transition hover:text-zinc-100">
+                Sign up
+              </Link>
+            </>
+          )}
+        </p>
+      )}
 
       {message && <p className="text-sm text-zinc-400">{message}</p>}
     </section>
