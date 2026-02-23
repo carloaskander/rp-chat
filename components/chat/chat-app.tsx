@@ -183,9 +183,33 @@ export function ChatApp() {
     }
 
     if (!user) {
-      setChats([]);
-      setActiveChatId(null);
-      return;
+      let cancelled = false;
+
+      const confirmSignedOut = async () => {
+        const { data, error } = await supabase.auth.getSession();
+
+        if (cancelled) {
+          return;
+        }
+
+        if (error) {
+          console.error("Failed to confirm auth session state.", error);
+          return;
+        }
+
+        if (data.session?.user) {
+          return;
+        }
+
+        setChats([]);
+        setActiveChatId(null);
+      };
+
+      void confirmSignedOut();
+
+      return () => {
+        cancelled = true;
+      };
     }
 
     let cancelled = false;
