@@ -127,7 +127,7 @@ function findCondenseFromIndex(
 
 export function ChatApp() {
   const router = useRouter();
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, authResolved, lastAuthEvent } = useAuth();
   const [chats, setChats] = useLocalStorageState(STORAGE_KEYS.chats, DEFAULT_CHAT_SESSIONS);
   const [activeChatId, setActiveChatId] = useLocalStorageState<string | null>(
     STORAGE_KEYS.activeChatId,
@@ -147,6 +147,7 @@ export function ChatApp() {
   const [chatSettingsChatId, setChatSettingsChatId] = useState<string | null>(null);
   const [thinkingChatId, setThinkingChatId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
 
   useEffect(() => {
     setChats((prev) => {
@@ -178,38 +179,31 @@ export function ChatApp() {
   }, [setChats]);
 
   useEffect(() => {
-    if (isAuthLoading) {
+    if (!authResolved) {
       return;
     }
 
-    if (!user) {
-      let cancelled = false;
+    if (user?.id) {
+      setResolvedUserId((prev) => (prev === user.id ? prev : user.id));
+      return;
+    }
 
-      const confirmSignedOut = async () => {
-        const { data, error } = await supabase.auth.getSession();
+    if (lastAuthEvent === "SIGNED_OUT" || lastAuthEvent === "USER_DELETED") {
+      setResolvedUserId(null);
+    }
+  }, [authResolved, lastAuthEvent, user?.id]);
 
-        if (cancelled) {
-          return;
-        }
+  useEffect(() => {
+    if (!authResolved) {
+      return;
+    }
 
-        if (error) {
-          console.error("Failed to confirm auth session state.", error);
-          return;
-        }
-
-        if (data.session?.user) {
-          return;
-        }
-
+    if (!resolvedUserId) {
+      if (lastAuthEvent === "SIGNED_OUT" || lastAuthEvent === "USER_DELETED") {
         setChats([]);
         setActiveChatId(null);
-      };
-
-      void confirmSignedOut();
-
-      return () => {
-        cancelled = true;
-      };
+      }
+      return;
     }
 
     let cancelled = false;
@@ -218,7 +212,7 @@ export function ChatApp() {
       const { data, error } = await supabase
         .from("chats")
         .select("id, title, story_summary, created_at, updated_at")
-        .eq("user_id", user.id)
+        .eq("user_id", resolvedUserId)
         .order("updated_at", { ascending: false });
 
       if (cancelled) {
@@ -268,10 +262,10 @@ export function ChatApp() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthLoading, user, setActiveChatId, setChats]);
+  }, [authResolved, lastAuthEvent, resolvedUserId, setActiveChatId, setChats]);
 
   useEffect(() => {
-    if (isAuthLoading || !user) {
+    if (!authResolved || !resolvedUserId) {
       return;
     }
 
@@ -285,7 +279,7 @@ export function ChatApp() {
     if (!activeChatId || !chats.some((chat) => chat.id === activeChatId)) {
       setActiveChatId(chats[0].id);
     }
-  }, [activeChatId, chats, isAuthLoading, setActiveChatId, user]);
+  }, [activeChatId, authResolved, chats, resolvedUserId, setActiveChatId]);
 
   const sortedChats = useMemo(
     () => [...chats].sort((a, b) => b.updatedAt - a.updatedAt),
