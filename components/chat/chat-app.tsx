@@ -386,14 +386,37 @@ export function ChatApp() {
     });
   };
 
-  const handleRenameChat = (chatId: string, title: string) => {
+  const handleRenameChat = async (chatId: string, title: string) => {
+    if (!user) {
+      console.error("Cannot rename chat: no authenticated user.");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("chats")
+      .update({
+        title,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", chatId)
+      .select("id, title, updated_at")
+      .single();
+
+    if (error || !data) {
+      console.error("Failed to rename chat in Supabase.", error);
+      return;
+    }
+
+    const updatedAt = Date.parse(data.updated_at);
+    const fallbackUpdatedAt = Date.now();
+
     setChats((prev) =>
       prev.map((chat) =>
         chat.id === chatId
           ? {
               ...chat,
-              title,
-              updatedAt: Date.now(),
+              title: data.title || title,
+              updatedAt: Number.isNaN(updatedAt) ? fallbackUpdatedAt : updatedAt,
             }
           : chat,
       ),
