@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Cog, Menu, SlidersHorizontal } from "lucide-react";
 
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
-import { generateStorySummary } from "@/lib/ai-client";
 import { buildChatTitle, createId } from "@/lib/chat-utils";
 import {
   DEFAULT_CHARACTER_PRESETS,
@@ -24,106 +23,6 @@ import { ChatSettingsModal } from "./chat-settings-modal";
 import { ChatPanel } from "./chat-panel";
 import { InstructionPresetSelector } from "./instruction-preset-selector";
 import { Sidebar } from "./sidebar";
-
-const ESTIMATED_CONTEXT_LIMIT_TOKENS = 8000;
-const SUMMARY_TRIGGER_USAGE_RATIO = 0.68;
-const SUMMARY_TRIGGER_TOKEN_ESTIMATE = Math.floor(
-  ESTIMATED_CONTEXT_LIMIT_TOKENS * SUMMARY_TRIGGER_USAGE_RATIO,
-);
-const SUMMARY_RESPONSE_BUFFER_TOKENS =
-  ESTIMATED_CONTEXT_LIMIT_TOKENS - SUMMARY_TRIGGER_TOKEN_ESTIMATE;
-const SUMMARY_KEEP_RECENT_TOKEN_ESTIMATE = 1400;
-const SUMMARY_MIN_CONDENSE_TOKEN_ESTIMATE = 900;
-const TOKEN_ESTIMATE_CHARS_PER_TOKEN = 4;
-const TOKEN_ESTIMATE_MESSAGE_OVERHEAD = 8;
-const SUMMARY_NOTICE_PREFIX = "[summary-notice]";
-const SUMMARY_NOTICE_TEXT =
-  "Earlier parts of this conversation were summarized to keep context efficient.";
-
-function isTransportFailure(message: ChatMessage): boolean {
-  return (
-    message.role === "assistant" &&
-    message.content.startsWith("Request failed:")
-  );
-}
-
-function isSummaryNotice(message: ChatMessage): boolean {
-  return (
-    message.role === "assistant" &&
-    message.content.startsWith(SUMMARY_NOTICE_PREFIX)
-  );
-}
-
-function createSummaryNoticeMessage(): ChatMessage {
-  return {
-    id: createId(),
-    role: "assistant",
-    content: SUMMARY_NOTICE_PREFIX + " " + SUMMARY_NOTICE_TEXT,
-    createdAt: Date.now(),
-  };
-}
-
-function estimateMessageTokens(message: ChatMessage): number {
-  return Math.ceil(message.content.length / TOKEN_ESTIMATE_CHARS_PER_TOKEN)
-    + TOKEN_ESTIMATE_MESSAGE_OVERHEAD;
-}
-
-function estimateMessagesTokens(messages: ChatMessage[]): number {
-  return messages.reduce(
-    (total, message) => total + estimateMessageTokens(message),
-    0,
-  );
-}
-
-function isModelContextMessage(message: ChatMessage): boolean {
-  return !isTransportFailure(message) && !isSummaryNotice(message);
-}
-
-function findRecentMessageStartIndex(
-  messages: ChatMessage[],
-  keepRecentTokenBudget: number,
-): number {
-  let recentTokenEstimate = 0;
-
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index];
-
-    if (isModelContextMessage(message)) {
-      recentTokenEstimate += estimateMessageTokens(message);
-    }
-
-    if (recentTokenEstimate >= keepRecentTokenBudget) {
-      return index;
-    }
-  }
-
-  return 0;
-}
-
-function findMandatoryPreserveStartIndex(messages: ChatMessage[]): number {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index];
-
-    if (message.role === "user" && isModelContextMessage(message)) {
-      return index;
-    }
-  }
-
-  return Math.max(messages.length - 1, 0);
-}
-
-function findCondenseFromIndex(
-  messages: ChatMessage[],
-  keepRecentTokenBudget: number,
-): number {
-  const budgetStartIndex = findRecentMessageStartIndex(
-    messages,
-    keepRecentTokenBudget,
-  );
-  const mandatoryPreserveStartIndex = findMandatoryPreserveStartIndex(messages);
-
-  return Math.min(budgetStartIndex, mandatoryPreserveStartIndex);
-}
 
 export function ChatApp() {
   const router = useRouter();
@@ -471,140 +370,100 @@ export function ChatApp() {
     );
   };
 
-  const maybeSummarizeChat = async (params: {
-    chatSnapshot: ChatSession;
+  const maybeSummarizeChat = useCallback(async (params: {
+    chatId: string;
     profile: ApiProfile;
     instructionContent?: string;
     characterContent?: string;
     force?: boolean;
   }) => {
     const {
-      chatSnapshot,
+      chatId,
       profile,
       instructionContent,
       characterContent,
       force = false,
     } = params;
 
-    const lastContextMessage = [...chatSnapshot.messages]
-      .reverse()
-      .find((message) => isModelContextMessage(message));
-
-    // Never summarize mid-turn; only summarize after an assistant response exists.
-    if (!lastContextMessage || lastContextMessage.role !== "assistant") {
-      return;
-    }
-
-    const summarizableMessages = chatSnapshot.messages.filter((message) =>
-      isModelContextMessage(message),
-    );
-    const totalTokenEstimate = estimateMessagesTokens(summarizableMessages);
-
-    if (!force && totalTokenEstimate < SUMMARY_TRIGGER_TOKEN_ESTIMATE) {
-      return;
-    }
-
-    const condenseFromIndex = findCondenseFromIndex(
-      chatSnapshot.messages,
-      Math.min(
-        SUMMARY_KEEP_RECENT_TOKEN_ESTIMATE,
-        ESTIMATED_CONTEXT_LIMIT_TOKENS - SUMMARY_RESPONSE_BUFFER_TOKENS,
-      ),
-    );
-
-    if (condenseFromIndex <= 0) {
-      return;
-    }
-
-    const messagesToCondense = chatSnapshot.messages
-      .slice(0, condenseFromIndex)
-      .filter((message) => isModelContextMessage(message));
-
-    if (
-      !force &&
-      estimateMessagesTokens(messagesToCondense) < SUMMARY_MIN_CONDENSE_TOKEN_ESTIMATE
-    ) {
+    const { data: authData, error: authError } = await supabase.auth.getSession();
+    if (authError || !authData.session?.access_token) {
+      console.error("Unable to summarize chat: missing authenticated session.");
       return;
     }
 
     try {
-      const updatedSummary = await generateStorySummary({
-        profile,
-        existingSummary: chatSnapshot.storySummary,
-        messagesToCondense,
-        instructionContent,
-        characterContent,
+      const response = await fetch("/api/chat/summarize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authData.session.access_token}`,
+        },
+        body: JSON.stringify({
+          chatId,
+          provider: profile.provider,
+          model: profile.model,
+          force,
+          instructionContent,
+          characterContent,
+        }),
       });
-      const nextSummary = updatedSummary.trim();
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          typeof payload?.error === "string"
+            ? payload.error
+            : "Server summarization request failed.",
+        );
+      }
+
+      if (!payload?.summarized) {
+        return;
+      }
+
+      const nextSummary =
+        typeof payload.storySummary === "string"
+          ? payload.storySummary
+          : null;
 
       if (!nextSummary) {
         return;
       }
 
+      const mappedMessages: ChatMessage[] = Array.isArray(payload.messages)
+        ? payload.messages.map((message: {
+          id: string;
+          role: string;
+          content: string;
+          createdAt: number;
+        }) => ({
+          id: message.id,
+          role: message.role === "assistant" ? "assistant" : "user",
+          content: message.content,
+          createdAt:
+            typeof message.createdAt === "number" ? message.createdAt : Date.now(),
+        }))
+        : [];
+
       setChats((prev) =>
-        prev.map((chat) => {
-          if (chat.id !== chatSnapshot.id) {
-            return chat;
-          }
-
-          const latestLastContextMessage = [...chat.messages]
-            .reverse()
-            .find((message) => isModelContextMessage(message));
-
-          if (!latestLastContextMessage || latestLastContextMessage.role !== "assistant") {
-            return chat;
-          }
-
-          const latestSummarizableMessages = chat.messages.filter((message) =>
-            isModelContextMessage(message),
-          );
-          const latestTokenEstimate = estimateMessagesTokens(latestSummarizableMessages);
-
-          if (!force && latestTokenEstimate < SUMMARY_TRIGGER_TOKEN_ESTIMATE) {
-            return chat;
-          }
-
-          const latestCondenseFromIndex = findCondenseFromIndex(
-            chat.messages,
-            Math.min(
-              SUMMARY_KEEP_RECENT_TOKEN_ESTIMATE,
-              ESTIMATED_CONTEXT_LIMIT_TOKENS - SUMMARY_RESPONSE_BUFFER_TOKENS,
-            ),
-          );
-
-          if (latestCondenseFromIndex <= 0) {
-            return chat;
-          }
-
-          const latestMessagesToCondense = chat.messages
-            .slice(0, latestCondenseFromIndex)
-            .filter((message) => isModelContextMessage(message));
-
-          if (
-            !force &&
-            estimateMessagesTokens(latestMessagesToCondense)
-            < SUMMARY_MIN_CONDENSE_TOKEN_ESTIMATE
-          ) {
-            return chat;
-          }
-
-          const nextRecentMessages = chat.messages
-            .slice(latestCondenseFromIndex)
-            .filter((message) => !isSummaryNotice(message));
-          const nextMessages = [...nextRecentMessages, createSummaryNoticeMessage()];
-
-          return {
-            ...chat,
-            storySummary: nextSummary,
-            messages: nextMessages,
-            updatedAt: Date.now(),
-          };
-        }),
+        prev.map((chat) =>
+          chat.id === chatId
+            ? {
+                ...chat,
+                storySummary: nextSummary,
+                messages: mappedMessages,
+                updatedAt:
+                  typeof payload.updatedAt === "number"
+                    ? payload.updatedAt
+                    : Date.now(),
+              }
+            : chat,
+        ),
       );
     } catch (error) {
       console.error("Story summarization failed", error);
     }
-  };
+  }, [setChats]);
 
   const handleSlashCommand = async (commandId: string) => {
     if (commandId !== "summarize" || !activeChatId) {
@@ -635,7 +494,7 @@ export function ChatApp() {
     );
 
     await maybeSummarizeChat({
-      chatSnapshot: targetChat,
+      chatId: targetChat.id,
       profile: selectedProfile,
       instructionContent: selectedInstructionPreset?.content,
       characterContent: selectedCharacterPreset?.content,
@@ -664,7 +523,7 @@ export function ChatApp() {
     }
 
     const selectedProfile = apiProfiles.find((profile) => profile.id === targetChat.apiProfileId);
-    if (!selectedProfile || !selectedProfile.apiKey.trim()) {
+    if (!selectedProfile || !selectedProfile.provider.trim() || !selectedProfile.model.trim()) {
       setChatSettingsChatId(activeChatId);
       return;
     }
@@ -745,16 +604,6 @@ export function ChatApp() {
             : Date.now(),
       };
 
-      const chatAfterAssistant: ChatSession = {
-        ...targetChat,
-        messages: [...targetChat.messages, userMessage, assistantMessage],
-        title: buildChatTitle(
-          [...targetChat.messages, userMessage, assistantMessage],
-          1,
-        ),
-        updatedAt: Date.now(),
-      };
-
       setChats((prev) =>
         prev.map((chat, index) => {
           if (chat.id !== requestChatId) {
@@ -773,7 +622,7 @@ export function ChatApp() {
       );
 
       void maybeSummarizeChat({
-        chatSnapshot: chatAfterAssistant,
+        chatId: requestChatId,
         profile: selectedProfile,
         instructionContent: selectedInstructionPreset?.content,
         characterContent: selectedCharacterPreset?.content,
