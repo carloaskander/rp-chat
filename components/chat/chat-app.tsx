@@ -40,7 +40,7 @@ export function ChatApp() {
     STORAGE_KEYS.characterPresets,
     DEFAULT_CHARACTER_PRESETS,
   );
-  const [apiProfiles] = useLocalStorageState<ApiProfile[]>(STORAGE_KEYS.apiProfiles, []);
+  const [apiProfiles, setApiProfiles] = useState<ApiProfile[]>([]);
 
   const [activeView, setActiveView] = useState<SidebarView>("chat");
   const [chatSettingsChatId, setChatSettingsChatId] = useState<string | null>(null);
@@ -98,6 +98,48 @@ export function ChatApp() {
       setActiveChatId(null);
     }
   }, [authResolved, lastAuthEvent, setActiveChatId, setChats]);
+
+  useEffect(() => {
+    if (!authResolved || !resolvedUserId) {
+      setApiProfiles([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadApiProfiles = async () => {
+      const { data, error } = await supabase
+        .from("api_profiles")
+        .select("id, name, provider, model, updated_at")
+        .eq("user_id", resolvedUserId)
+        .order("updated_at", { ascending: false });
+
+      if (cancelled) {
+        return;
+      }
+
+      if (error) {
+        console.error("Failed to load API profiles from Supabase.", error);
+        return;
+      }
+
+      const nextProfiles: ApiProfile[] = (data ?? []).map((row) => ({
+        id: row.id,
+        name: row.name,
+        provider: row.provider,
+        model: row.model,
+        apiKey: "",
+      }));
+
+      setApiProfiles(nextProfiles);
+    };
+
+    void loadApiProfiles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authResolved, resolvedUserId]);
 
   useEffect(() => {
     if (!authResolved || !resolvedUserId) {

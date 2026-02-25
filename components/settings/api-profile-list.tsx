@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import { createId } from "@/lib/chat-utils";
 import { validateApiProfile } from "@/lib/profile-validation";
 import { ApiProfile } from "@/types/settings";
 
@@ -10,7 +9,9 @@ import { ApiProfileEditorModal } from "./api-profile-editor-modal";
 
 interface ApiProfileListProps {
   profiles: ApiProfile[];
-  onChangeProfiles: (profiles: ApiProfile[]) => void;
+  onCreateProfile: (value: Omit<ApiProfile, "id">) => Promise<void>;
+  onUpdateProfile: (id: string, value: Omit<ApiProfile, "id">) => Promise<void>;
+  onDeleteProfile: (id: string) => Promise<void>;
   onPersistApiKey: (params: { provider: string; apiKey: string }) => Promise<void>;
 }
 
@@ -23,12 +24,16 @@ const emptyDraft: Omit<ApiProfile, "id"> = {
 
 export function ApiProfileList({
   profiles,
-  onChangeProfiles,
+  onCreateProfile,
+  onUpdateProfile,
+  onDeleteProfile,
   onPersistApiKey,
 }: ApiProfileListProps) {
   const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [validatingProfileId, setValidatingProfileId] = useState<string | null>(null);
+  const [deletingProfileId, setDeletingProfileId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [validationResults, setValidationResults] = useState<
     Record<string, { ok: boolean; message: string }>
   >({});
@@ -36,9 +41,16 @@ export function ApiProfileList({
   const editingProfile = profiles.find((profile) => profile.id === editingProfileId) ?? null;
   const isModalOpen = isCreating || editingProfile !== null;
 
-  const handleDeleteProfile = (profileId: string) => {
-    const nextProfiles = profiles.filter((profile) => profile.id !== profileId);
-    onChangeProfiles(nextProfiles);
+  const handleDeleteProfile = async (profileId: string) => {
+    setActionError(null);
+    setDeletingProfileId(profileId);
+    try {
+      await onDeleteProfile(profileId);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Could not delete profile.");
+    } finally {
+      setDeletingProfileId(null);
+    }
   };
 
   const handleValidateProfile = async (profile: ApiProfile) => {
@@ -122,16 +134,22 @@ export function ApiProfileList({
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleDeleteProfile(profile.id)}
+                    onClick={() => void handleDeleteProfile(profile.id)}
+                    disabled={deletingProfileId === profile.id}
                     className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
                   >
-                    Delete
+                    {deletingProfileId === profile.id ? "Deleting..." : "Delete"}
                   </button>
                 </div>
               </article>
             );
           })}
         </div>
+      )}
+      {actionError && (
+        <p className="mt-3 text-sm text-rose-400">
+          {actionError}
+        </p>
       )}
 
       <ApiProfileEditorModal
@@ -153,18 +171,12 @@ export function ApiProfileList({
           setEditingProfileId(null);
         }}
         onSave={async (value) => {
+          setActionError(null);
+
           if (isCreating) {
-            const nextProfile: ApiProfile = {
-              id: createId(),
-              ...value,
-            };
-            const nextProfiles = [nextProfile, ...profiles];
-            onChangeProfiles(nextProfiles);
+            await onCreateProfile(value);
           } else if (editingProfile) {
-            const nextProfiles = profiles.map((profile) =>
-              profile.id === editingProfile.id ? { ...profile, ...value } : profile,
-            );
-            onChangeProfiles(nextProfiles);
+            await onUpdateProfile(editingProfile.id, value);
           }
 
           await onPersistApiKey({
