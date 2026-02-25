@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 import { generateStorySummary } from "@/lib/ai-client";
+import { getMissingProviderKeyMessage, getUserProviderApiKey } from "@/lib/server/user-api-key";
 import { ChatMessage } from "@/types/chat";
 import { ApiProfile } from "@/types/settings";
 
@@ -35,28 +36,6 @@ function getRequiredEnv(name: string): string {
     throw new Error(`Missing required environment variable: ${name}`);
   }
   return value;
-}
-
-function resolveProviderApiKey(providerRaw: string): string {
-  const provider = providerRaw.trim().toLowerCase();
-
-  if (provider === "openai") {
-    return getRequiredEnv("OPENAI_API_KEY");
-  }
-  if (provider === "grok" || provider === "xai" || provider === "x.ai") {
-    return getRequiredEnv("XAI_API_KEY");
-  }
-  if (provider === "kimi" || provider === "moonshot" || provider === "moonshot ai") {
-    return getRequiredEnv("KIMI_API_KEY");
-  }
-  if (provider === "anthropic") {
-    return getRequiredEnv("ANTHROPIC_API_KEY");
-  }
-  if (provider === "google" || provider === "gemini") {
-    return getRequiredEnv("GOOGLE_API_KEY");
-  }
-
-  throw new Error(`Unsupported provider: ${providerRaw}`);
 }
 
 function mapRole(role: string): ChatMessage["role"] {
@@ -259,12 +238,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ summarized: false, reason: "condense_window_small" });
     }
 
+    const { apiKey, error: apiKeyError } = await getUserProviderApiKey({
+      supabase,
+      userId: user.id,
+      provider,
+    });
+    if (apiKeyError) {
+      if (apiKeyError === getMissingProviderKeyMessage()) {
+        return NextResponse.json({ error: apiKeyError }, { status: 400 });
+      }
+      return NextResponse.json({ error: apiKeyError }, { status: 500 });
+    }
+
     const serverProfile: ApiProfile = {
       id: "server-profile",
       name: "Server Profile",
       provider,
       model,
-      apiKey: resolveProviderApiKey(provider),
+      apiKey: apiKey ?? "",
     };
 
     const updatedSummary = await generateStorySummary({
