@@ -7,7 +7,7 @@ import { Cog, Menu, SlidersHorizontal } from "lucide-react";
 
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
 import { generateAssistantReply, generateStorySummary } from "@/lib/ai-client";
-import { buildChatTitle, createEmptyChatSession, createId } from "@/lib/chat-utils";
+import { buildChatTitle, createId } from "@/lib/chat-utils";
 import {
   DEFAULT_CHARACTER_PRESETS,
   DEFAULT_CHAT_SESSIONS,
@@ -408,9 +408,8 @@ export function ChatApp() {
       const nextChats = prev.filter((chat) => chat.id !== chatId);
 
       if (nextChats.length === 0) {
-        const freshChat = createEmptyChatSession(1);
-        setActiveChatId(freshChat.id);
-        return [freshChat];
+        setActiveChatId(null);
+        return [];
       }
 
       if (activeChatId === chatId) {
@@ -642,6 +641,11 @@ export function ChatApp() {
       return;
     }
 
+    if (!user) {
+      console.error("Cannot send message: no authenticated user.");
+      return;
+    }
+
     const targetChat = chats.find((chat) => chat.id === activeChatId);
     if (!targetChat || !targetChat.apiProfileId) {
       if (!hasApiProfiles) {
@@ -696,6 +700,20 @@ export function ChatApp() {
     setThinkingChatId(requestChatId);
 
     try {
+      const { data: ownedChat, error: ownedChatError } = await supabase
+        .from("chats")
+        .select("id")
+        .eq("id", requestChatId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (ownedChatError) {
+        throw new Error(`Failed to verify chat ownership: ${ownedChatError.message}`);
+      }
+      if (!ownedChat) {
+        throw new Error("Selected chat is not persisted for the current user.");
+      }
+
       const { error: userMessageInsertError } = await supabase
         .from("messages")
         .insert({
