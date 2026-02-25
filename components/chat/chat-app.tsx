@@ -224,7 +224,7 @@ export function ChatApp() {
       }
 
       const now = Date.now();
-      const nextChats: ChatSession[] = (data ?? []).map((row) => {
+      const baseChats: ChatSession[] = (data ?? []).map((row) => {
         const createdAt = Date.parse(row.created_at);
         const updatedAt = Date.parse(row.updated_at);
 
@@ -241,6 +241,48 @@ export function ChatApp() {
           updatedAt: Number.isNaN(updatedAt) ? now : updatedAt,
         };
       });
+
+      if (baseChats.length === 0) {
+        setChats([]);
+        setActiveChatId(null);
+        return;
+      }
+
+      const chatIds = baseChats.map((chat) => chat.id);
+      const { data: messageRows, error: messageError } = await supabase
+        .from("messages")
+        .select("id, chat_id, role, content, created_at, is_archived")
+        .in("chat_id", chatIds)
+        .eq("is_archived", false)
+        .order("created_at", { ascending: true });
+
+      if (cancelled) {
+        return;
+      }
+
+      if (messageError) {
+        console.error("Failed to load chat messages from Supabase.", messageError);
+        return;
+      }
+
+      const messagesByChat = new Map<string, ChatMessage[]>();
+      for (const row of messageRows ?? []) {
+        const createdAt = Date.parse(row.created_at);
+        const mappedMessage: ChatMessage = {
+          id: row.id,
+          role: row.role === "assistant" ? "assistant" : "user",
+          content: row.content,
+          createdAt: Number.isNaN(createdAt) ? now : createdAt,
+        };
+        const existing = messagesByChat.get(row.chat_id) ?? [];
+        existing.push(mappedMessage);
+        messagesByChat.set(row.chat_id, existing);
+      }
+
+      const nextChats = baseChats.map((chat) => ({
+        ...chat,
+        messages: messagesByChat.get(chat.id) ?? [],
+      }));
 
       setChats(nextChats);
       setActiveChatId((prev) => {
@@ -633,6 +675,8 @@ export function ChatApp() {
       createdAt: now,
     };
 
+    const userMessageCreatedAtIso = new Date(userMessage.createdAt).toISOString();
+
     setChats((prev) =>
       prev.map((chat, index) => {
         if (chat.id !== activeChatId) {
@@ -652,6 +696,20 @@ export function ChatApp() {
     setThinkingChatId(requestChatId);
 
     try {
+      const { error: userMessageInsertError } = await supabase
+        .from("messages")
+        .insert({
+          id: userMessage.id,
+          chat_id: requestChatId,
+          role: "user",
+          content: userMessage.content,
+          created_at: userMessageCreatedAtIso,
+        });
+
+      if (userMessageInsertError) {
+        throw new Error(`Failed to persist user message: ${userMessageInsertError.message}`);
+      }
+
       const messagesForModel = [...targetChat.messages, userMessage].filter(
         (message) => isModelContextMessage(message),
       );
@@ -670,6 +728,33 @@ export function ChatApp() {
         content: reply,
         createdAt: Date.now(),
       };
+      const assistantMessageCreatedAtIso = new Date(assistantMessage.createdAt).toISOString();
+
+      const { error: assistantMessageInsertError } = await supabase
+        .from("messages")
+        .insert({
+          id: assistantMessage.id,
+          chat_id: requestChatId,
+          role: "assistant",
+          content: assistantMessage.content,
+          created_at: assistantMessageCreatedAtIso,
+        });
+
+      if (assistantMessageInsertError) {
+        throw new Error(
+          `Failed to persist assistant message: ${assistantMessageInsertError.message}`,
+        );
+      }
+
+      const assistantUpdatedAt = new Date().toISOString();
+      const { error: chatUpdatedAtError } = await supabase
+        .from("chats")
+        .update({ updated_at: assistantUpdatedAt })
+        .eq("id", requestChatId);
+
+      if (chatUpdatedAtError) {
+        console.error("Failed to update chat timestamp after message send.", chatUpdatedAtError);
+      }
 
       const chatAfterAssistant: ChatSession = {
         ...targetChat,
