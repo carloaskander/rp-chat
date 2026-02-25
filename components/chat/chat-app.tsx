@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Cog, Menu, SlidersHorizontal } from "lucide-react";
 
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
-import { generateAssistantReply, generateStorySummary } from "@/lib/ai-client";
+import { generateStorySummary } from "@/lib/ai-client";
 import { buildChatTitle, createId } from "@/lib/chat-utils";
 import {
   DEFAULT_CHARACTER_PRESETS,
@@ -622,7 +622,7 @@ export function ChatApp() {
     }
 
     const selectedProfile = apiProfiles.find((profile) => profile.id === targetChat.apiProfileId);
-    if (!selectedProfile || !selectedProfile.apiKey.trim()) {
+    if (!selectedProfile || !selectedProfile.provider.trim() || !selectedProfile.model.trim()) {
       setChatSettingsChatId(activeChatId);
       return;
     }
@@ -686,8 +686,6 @@ export function ChatApp() {
       createdAt: now,
     };
 
-    const userMessageCreatedAtIso = new Date(userMessage.createdAt).toISOString();
-
     setChats((prev) =>
       prev.map((chat, index) => {
         if (chat.id !== activeChatId) {
@@ -707,79 +705,45 @@ export function ChatApp() {
     setThinkingChatId(requestChatId);
 
     try {
-      const { data: ownedChat, error: ownedChatError } = await supabase
-        .from("chats")
-        .select("id")
-        .eq("id", requestChatId)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (ownedChatError) {
-        throw new Error(`Failed to verify chat ownership: ${ownedChatError.message}`);
-      }
-      if (!ownedChat) {
-        throw new Error("Selected chat is not persisted for the current user.");
+      const { data: authData, error: authError } = await supabase.auth.getSession();
+      if (authError || !authData.session?.access_token) {
+        throw new Error("Unable to resolve authenticated session.");
       }
 
-      const { error: userMessageInsertError } = await supabase
-        .from("messages")
-        .insert({
-          id: userMessage.id,
-          chat_id: requestChatId,
-          role: "user",
+      const response = await fetch("/api/chat/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authData.session.access_token}`,
+        },
+        body: JSON.stringify({
+          chatId: requestChatId,
           content: userMessage.content,
-          created_at: userMessageCreatedAtIso,
-        });
-
-      if (userMessageInsertError) {
-        throw new Error(`Failed to persist user message: ${userMessageInsertError.message}`);
-      }
-
-      const messagesForModel = [...targetChat.messages, userMessage].filter(
-        (message) => isModelContextMessage(message),
-      );
-
-      const reply = await generateAssistantReply({
-        profile: selectedProfile,
-        messages: messagesForModel,
-        instructionContent: selectedInstructionPreset?.content,
-        characterContent: selectedCharacterPreset?.content,
-        storySummary: targetChat.storySummary,
+          provider: selectedProfile.provider,
+          model: selectedProfile.model,
+          instructionContent: selectedInstructionPreset?.content,
+          characterContent: selectedCharacterPreset?.content,
+        }),
       });
 
-      const assistantMessage: ChatMessage = {
-        id: createId(),
-        role: "assistant",
-        content: reply,
-        createdAt: Date.now(),
-      };
-      const assistantMessageCreatedAtIso = new Date(assistantMessage.createdAt).toISOString();
-
-      const { error: assistantMessageInsertError } = await supabase
-        .from("messages")
-        .insert({
-          id: assistantMessage.id,
-          chat_id: requestChatId,
-          role: "assistant",
-          content: assistantMessage.content,
-          created_at: assistantMessageCreatedAtIso,
-        });
-
-      if (assistantMessageInsertError) {
+      const payload = await response.json();
+      if (!response.ok) {
         throw new Error(
-          `Failed to persist assistant message: ${assistantMessageInsertError.message}`,
+          typeof payload?.error === "string"
+            ? payload.error
+            : "Server chat send request failed.",
         );
       }
 
-      const assistantUpdatedAt = new Date().toISOString();
-      const { error: chatUpdatedAtError } = await supabase
-        .from("chats")
-        .update({ updated_at: assistantUpdatedAt })
-        .eq("id", requestChatId);
-
-      if (chatUpdatedAtError) {
-        console.error("Failed to update chat timestamp after message send.", chatUpdatedAtError);
-      }
+      const assistantMessage: ChatMessage = {
+        id: payload.assistantMessage?.id ?? createId(),
+        role: "assistant",
+        content: payload.assistantMessage?.content ?? "",
+        createdAt:
+          typeof payload.assistantMessage?.createdAt === "number"
+            ? payload.assistantMessage.createdAt
+            : Date.now(),
+      };
 
       const chatAfterAssistant: ChatSession = {
         ...targetChat,
@@ -798,12 +762,12 @@ export function ChatApp() {
           }
 
           const nextMessages = [...chat.messages, assistantMessage];
-
           return {
             ...chat,
             messages: nextMessages,
             title: buildChatTitle(nextMessages, index + 1),
-            updatedAt: Date.now(),
+            updatedAt:
+              typeof payload.updatedAt === "number" ? payload.updatedAt : Date.now(),
           };
         }),
       );
