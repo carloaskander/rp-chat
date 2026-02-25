@@ -403,28 +403,35 @@ export function ChatApp() {
     setIsSidebarOpen(false);
   };
 
-  const handleDeleteChat = (chatId: string) => {
-    setChats((prev) => {
-      const nextChats = prev.filter((chat) => chat.id !== chatId);
+  const handleDeleteChat = async (chatId: string) => {
+    if (!user) {
+      console.error("Cannot delete chat: no authenticated user.");
+      return;
+    }
 
-      if (nextChats.length === 0) {
-        setActiveChatId(null);
-        return [];
-      }
+    const { error } = await supabase
+      .from("chats")
+      .delete()
+      .eq("id", chatId)
+      .eq("user_id", user.id);
 
-      if (activeChatId === chatId) {
-        setActiveChatId(nextChats[0].id);
-      }
+    if (error) {
+      console.error("Failed to delete chat from Supabase.", error);
+      return;
+    }
 
-      if (chatSettingsChatId === chatId) {
-        setChatSettingsChatId(null);
-      }
-      if (thinkingChatId === chatId) {
-        setThinkingChatId(null);
-      }
+    setChats((prev) => prev.filter((chat) => chat.id !== chatId));
 
-      return nextChats;
-    });
+    if (activeChatId === chatId) {
+      setActiveChatId(null);
+    }
+
+    if (chatSettingsChatId === chatId) {
+      setChatSettingsChatId(null);
+    }
+    if (thinkingChatId === chatId) {
+      setThinkingChatId(null);
+    }
   };
 
   const handleRenameChat = async (chatId: string, title: string) => {
