@@ -11,6 +11,7 @@ import { ApiProfileEditorModal } from "./api-profile-editor-modal";
 interface ApiProfileListProps {
   profiles: ApiProfile[];
   onChangeProfiles: (profiles: ApiProfile[]) => void;
+  onPersistApiKey: (params: { provider: string; apiKey: string }) => Promise<void>;
 }
 
 const emptyDraft: Omit<ApiProfile, "id"> = {
@@ -23,6 +24,7 @@ const emptyDraft: Omit<ApiProfile, "id"> = {
 export function ApiProfileList({
   profiles,
   onChangeProfiles,
+  onPersistApiKey,
 }: ApiProfileListProps) {
   const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -150,7 +152,7 @@ export function ApiProfileList({
           setIsCreating(false);
           setEditingProfileId(null);
         }}
-        onSave={(value) => {
+        onSave={async (value) => {
           if (isCreating) {
             const nextProfile: ApiProfile = {
               id: createId(),
@@ -164,6 +166,11 @@ export function ApiProfileList({
             );
             onChangeProfiles(nextProfiles);
           }
+
+          await onPersistApiKey({
+            provider: value.provider,
+            apiKey: value.apiKey,
+          });
 
           setIsCreating(false);
           setEditingProfileId(null);

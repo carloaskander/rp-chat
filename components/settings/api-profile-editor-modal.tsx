@@ -9,7 +9,7 @@ interface ApiProfileEditorModalProps {
   open: boolean;
   title: string;
   initialValue: Omit<ApiProfile, "id">;
-  onSave: (value: Omit<ApiProfile, "id">) => void;
+  onSave: (value: Omit<ApiProfile, "id">) => Promise<void> | void;
   onCancel: () => void;
 }
 
@@ -35,6 +35,8 @@ export function ApiProfileEditorModal({
   const [models, setModels] = useState<string[]>([]);
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsError, setModelsError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const loadModels = useCallback(async (providerValue: string, apiKeyValue: string) => {
     if (!open) {
@@ -70,15 +72,23 @@ export function ApiProfileEditorModal({
     return null;
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setSaveError(null);
+    setIsSaving(true);
 
-    onSave({
-      name: name.trim() || "Untitled Profile",
-      provider: provider.trim() || "OpenAI",
-      model: model.trim(),
-      apiKey,
-    });
+    try {
+      await onSave({
+        name: name.trim() || "Untitled Profile",
+        provider: provider.trim() || "OpenAI",
+        model: model.trim(),
+        apiKey,
+      });
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Could not save API profile.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -182,11 +192,17 @@ export function ApiProfileEditorModal({
           </button>
           <button
             type="submit"
+            disabled={isSaving}
             className="rounded-[2px] border border-zinc-600 bg-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-100 hover:bg-zinc-600"
           >
-            Save
+            {isSaving ? "Saving..." : "Save"}
           </button>
         </div>
+        {saveError && (
+          <p className="mt-3 text-sm text-rose-400">
+            {saveError}
+          </p>
+        )}
       </form>
     </div>
   );
