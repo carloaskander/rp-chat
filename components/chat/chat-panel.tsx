@@ -12,8 +12,11 @@ interface ChatPanelProps {
   setupRequired: boolean;
   hasApiProfiles: boolean;
   isThinking: boolean;
+  hasOlderMessages: boolean;
+  isLoadingOlderMessages: boolean;
   onSendMessage: (content: string) => void;
   onRunSlashCommand: (commandId: string) => void | Promise<void>;
+  onLoadOlderMessages: () => Promise<void>;
   onOpenChatSettings: () => void;
 }
 
@@ -149,8 +152,11 @@ export function ChatPanel({
   setupRequired,
   hasApiProfiles,
   isThinking,
+  hasOlderMessages,
+  isLoadingOlderMessages,
   onSendMessage,
   onRunSlashCommand,
+  onLoadOlderMessages,
   onOpenChatSettings,
 }: ChatPanelProps) {
   const TEXTAREA_MAX_HEIGHT = 168;
@@ -160,8 +166,19 @@ export function ChatPanel({
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const [activeCommandIndex, setActiveCommandIndex] = useState(0);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
+  const isLoadingOlderRef = useRef(false);
+  const previousMessageRef = useRef<{
+    chatId: string | null;
+    firstMessageId: string | null;
+    lastMessageId: string | null;
+  }>({
+    chatId: null,
+    firstMessageId: null,
+    lastMessageId: null,
+  });
 
   const slashQuery = inputValue.startsWith("/") ? inputValue.slice(1).trim() : "";
   const isSlashMenuOpen =
@@ -174,8 +191,72 @@ export function ChatPanel({
   );
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [chat?.messages.length]);
+    const previous = previousMessageRef.current;
+    const nextChatId = chat?.id ?? null;
+    const nextMessages = chat?.messages ?? [];
+    const nextFirstMessageId = nextMessages[0]?.id ?? null;
+    const nextLastMessageId = nextMessages[nextMessages.length - 1]?.id ?? null;
+
+    const isChatSwitched = previous.chatId !== nextChatId;
+    const isAppendedMessage =
+      previous.chatId === nextChatId &&
+      previous.lastMessageId !== nextLastMessageId &&
+      previous.firstMessageId === nextFirstMessageId;
+
+    if ((isChatSwitched || isAppendedMessage) && bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+
+    previousMessageRef.current = {
+      chatId: nextChatId,
+      firstMessageId: nextFirstMessageId,
+      lastMessageId: nextLastMessageId,
+    };
+  }, [chat]);
+
+  useEffect(() => {
+    isLoadingOlderRef.current = isLoadingOlderMessages;
+  }, [isLoadingOlderMessages]);
+
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const handleScroll = async () => {
+      if (container.scrollTop > 32) {
+        return;
+      }
+      if (!hasOlderMessages || isLoadingOlderRef.current) {
+        return;
+      }
+
+      isLoadingOlderRef.current = true;
+      const previousScrollHeight = container.scrollHeight;
+      const previousScrollTop = container.scrollTop;
+
+      try {
+        await onLoadOlderMessages();
+      } finally {
+        requestAnimationFrame(() => {
+          const nextScrollHeight = container.scrollHeight;
+          container.scrollTop = previousScrollTop + (nextScrollHeight - previousScrollHeight);
+          isLoadingOlderRef.current = false;
+        });
+      }
+    };
+
+    const onScroll = () => {
+      void handleScroll();
+    };
+
+    container.addEventListener("scroll", onScroll);
+
+    return () => {
+      container.removeEventListener("scroll", onScroll);
+    };
+  }, [hasOlderMessages, onLoadOlderMessages]);
 
   useEffect(() => {
     const formEl = formRef.current;
@@ -331,9 +412,15 @@ export function ChatPanel({
       </header>
 
       <div
+        ref={messagesContainerRef}
         className="min-h-0 flex-1 w-full space-y-4 overflow-y-auto px-5 py-4 sm:mx-auto sm:max-w-3xl sm:px-8 sm:py-6 md:pb-6"
         style={{ paddingBottom: inputBarHeight + 16 }}
       >
+        {isLoadingOlderMessages && (
+          <div className="mx-auto w-full max-w-3xl text-center text-xs text-zinc-500">
+            Loading older messages...
+          </div>
+        )}
         {setupRequired ? (
           <div className="mx-auto mt-16 max-w-md text-center">
             <p className="text-sm text-zinc-400">
