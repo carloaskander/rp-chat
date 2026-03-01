@@ -9,7 +9,6 @@ import { useLocalStorageState } from "@/hooks/use-local-storage-state";
 import { buildChatTitle, createId } from "@/lib/chat-utils";
 import {
   DEFAULT_CHARACTER_PRESETS,
-  DEFAULT_CHAT_SESSIONS,
   DEFAULT_INSTRUCTION_PRESETS,
 } from "@/lib/mock-data";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
@@ -24,14 +23,19 @@ import { ChatPanel } from "./chat-panel";
 import { InstructionPresetSelector } from "./instruction-preset-selector";
 import { Sidebar } from "./sidebar";
 
+const MESSAGE_PAGE_SIZE = 50;
+
+interface ChatMessagePaginationState {
+  oldestCreatedAt: string | null;
+  hasOlder: boolean;
+  isLoading: boolean;
+}
+
 export function ChatApp() {
   const router = useRouter();
   const { user, authResolved, lastAuthEvent } = useAuth();
-  const [chats, setChats] = useLocalStorageState(STORAGE_KEYS.chats, DEFAULT_CHAT_SESSIONS);
-  const [activeChatId, setActiveChatId] = useLocalStorageState<string | null>(
-    STORAGE_KEYS.activeChatId,
-    DEFAULT_CHAT_SESSIONS[0]?.id ?? null,
-  );
+  const [chats, setChats] = useState<ChatSession[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [instructionPresets, setInstructionPresets] = useLocalStorageState(
     STORAGE_KEYS.instructionPresets,
     DEFAULT_INSTRUCTION_PRESETS,
@@ -47,6 +51,9 @@ export function ChatApp() {
   const [thinkingChatId, setThinkingChatId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
+  const [chatMessagePagination, setChatMessagePagination] = useState<
+    Record<string, ChatMessagePaginationState>
+  >({});
 
   useEffect(() => {
     setChats((prev) => {
@@ -96,8 +103,9 @@ export function ChatApp() {
       setResolvedUserId(null);
       setChats([]);
       setActiveChatId(null);
+      setChatMessagePagination({});
     }
-  }, [authResolved, lastAuthEvent, setActiveChatId, setChats]);
+  }, [authResolved, lastAuthEvent]);
 
   useEffect(() => {
     if (!authResolved || !resolvedUserId) {
@@ -186,56 +194,32 @@ export function ChatApp() {
       if (baseChats.length === 0) {
         setChats([]);
         setActiveChatId(null);
+        setChatMessagePagination({});
         return;
       }
-
-      const chatIds = baseChats.map((chat) => chat.id);
-      const { data: messageRows, error: messageError } = await supabase
-        .from("messages")
-        .select("id, chat_id, role, content, created_at, is_archived")
-        .in("chat_id", chatIds)
-        .eq("is_archived", false)
-        .order("created_at", { ascending: true });
-
-      if (cancelled) {
-        return;
-      }
-
-      if (messageError) {
-        console.error("Failed to load chat messages from Supabase.", messageError);
-        return;
-      }
-
-      const messagesByChat = new Map<string, ChatMessage[]>();
-      for (const row of messageRows ?? []) {
-        const createdAt = Date.parse(row.created_at);
-        const mappedMessage: ChatMessage = {
-          id: row.id,
-          role: row.role === "assistant" ? "assistant" : "user",
-          content: row.content,
-          createdAt: Number.isNaN(createdAt) ? now : createdAt,
-        };
-        const existing = messagesByChat.get(row.chat_id) ?? [];
-        existing.push(mappedMessage);
-        messagesByChat.set(row.chat_id, existing);
-      }
-
-      const nextChats = baseChats.map((chat) => ({
-        ...chat,
-        messages: messagesByChat.get(chat.id) ?? [],
-      }));
-
-      setChats(nextChats);
+      setChats(baseChats);
+      setChatMessagePagination(
+        Object.fromEntries(
+          baseChats.map((chat) => [
+            chat.id,
+            {
+              oldestCreatedAt: null,
+              hasOlder: false,
+              isLoading: false,
+            } as ChatMessagePaginationState,
+          ]),
+        ),
+      );
       setActiveChatId((prev) => {
-        if (nextChats.length === 0) {
+        if (baseChats.length === 0) {
           return null;
         }
 
-        if (prev && nextChats.some((chat) => chat.id === prev)) {
+        if (prev && baseChats.some((chat) => chat.id === prev)) {
           return prev;
         }
 
-        return nextChats[0].id;
+        return baseChats[0].id;
       });
     };
 
@@ -244,7 +228,82 @@ export function ChatApp() {
     return () => {
       cancelled = true;
     };
-  }, [authResolved, resolvedUserId, setActiveChatId, setChats]);
+  }, [authResolved, resolvedUserId]);
+
+  const loadLatestMessagesForChat = useCallback(async (chatId: string) => {
+    setChatMessagePagination((prev) => ({
+      ...prev,
+      [chatId]: {
+        oldestCreatedAt: prev[chatId]?.oldestCreatedAt ?? null,
+        hasOlder: prev[chatId]?.hasOlder ?? false,
+        isLoading: true,
+      },
+    }));
+
+    try {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("id, role, content, created_at")
+        .eq("chat_id", chatId)
+        .order("created_at", { ascending: false })
+        .limit(MESSAGE_PAGE_SIZE);
+
+      if (error) {
+        console.error("Failed to load latest chat messages from Supabase.", error);
+        return;
+      }
+
+      const descRows = data ?? [];
+      const ascRows = [...descRows].reverse();
+      const now = Date.now();
+      const mappedMessages: ChatMessage[] = ascRows.map((row) => ({
+        id: row.id,
+        role: row.role === "assistant" ? "assistant" : "user",
+        content: row.content,
+        createdAt: Number.isNaN(Date.parse(row.created_at))
+          ? now
+          : Date.parse(row.created_at),
+      }));
+
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === chatId
+            ? {
+                ...chat,
+                messages: mappedMessages,
+              }
+            : chat,
+        ),
+      );
+
+      setChatMessagePagination((prev) => ({
+        ...prev,
+        [chatId]: {
+          oldestCreatedAt: ascRows[0]?.created_at ?? null,
+          hasOlder: descRows.length === MESSAGE_PAGE_SIZE,
+          isLoading: false,
+        },
+      }));
+    } catch (error) {
+      console.error("Failed to load latest messages.", error);
+      setChatMessagePagination((prev) => ({
+        ...prev,
+        [chatId]: {
+          oldestCreatedAt: prev[chatId]?.oldestCreatedAt ?? null,
+          hasOlder: prev[chatId]?.hasOlder ?? false,
+          isLoading: false,
+        },
+      }));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!authResolved || !resolvedUserId || !activeChatId) {
+      return;
+    }
+
+    void loadLatestMessagesForChat(activeChatId);
+  }, [activeChatId, authResolved, loadLatestMessagesForChat, resolvedUserId]);
 
   useEffect(() => {
     if (!authResolved || !resolvedUserId) {
@@ -343,6 +402,102 @@ export function ChatApp() {
     setActiveView("chat");
     setIsSidebarOpen(false);
   };
+
+  const handleLoadOlderMessages = useCallback(async () => {
+    if (!activeChatId) {
+      return;
+    }
+
+    const pagination = chatMessagePagination[activeChatId];
+    if (!pagination || pagination.isLoading || !pagination.hasOlder) {
+      return;
+    }
+
+    if (!pagination.oldestCreatedAt) {
+      setChatMessagePagination((prev) => ({
+        ...prev,
+        [activeChatId]: {
+          ...prev[activeChatId],
+          hasOlder: false,
+          isLoading: false,
+        },
+      }));
+      return;
+    }
+
+    setChatMessagePagination((prev) => ({
+      ...prev,
+      [activeChatId]: {
+        ...prev[activeChatId],
+        isLoading: true,
+      },
+    }));
+
+    try {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("id, role, content, created_at")
+        .eq("chat_id", activeChatId)
+        .lt("created_at", pagination.oldestCreatedAt)
+        .order("created_at", { ascending: false })
+        .limit(MESSAGE_PAGE_SIZE);
+
+      if (error) {
+        console.error("Failed to load older chat messages from Supabase.", error);
+        setChatMessagePagination((prev) => ({
+          ...prev,
+          [activeChatId]: {
+            ...prev[activeChatId],
+            isLoading: false,
+          },
+        }));
+        return;
+      }
+
+      const descRows = data ?? [];
+      const ascRows = [...descRows].reverse();
+      const now = Date.now();
+      const olderMessages: ChatMessage[] = ascRows.map((row) => ({
+        id: row.id,
+        role: row.role === "assistant" ? "assistant" : "user",
+        content: row.content,
+        createdAt: Number.isNaN(Date.parse(row.created_at))
+          ? now
+          : Date.parse(row.created_at),
+      }));
+
+      if (olderMessages.length > 0) {
+        setChats((prev) =>
+          prev.map((chat) =>
+            chat.id === activeChatId
+              ? {
+                  ...chat,
+                  messages: [...olderMessages, ...chat.messages],
+                }
+              : chat,
+          ),
+        );
+      }
+
+      setChatMessagePagination((prev) => ({
+        ...prev,
+        [activeChatId]: {
+          oldestCreatedAt: ascRows[0]?.created_at ?? pagination.oldestCreatedAt,
+          hasOlder: descRows.length === MESSAGE_PAGE_SIZE,
+          isLoading: false,
+        },
+      }));
+    } catch (error) {
+      console.error("Failed to load older messages.", error);
+      setChatMessagePagination((prev) => ({
+        ...prev,
+        [activeChatId]: {
+          ...prev[activeChatId],
+          isLoading: false,
+        },
+      }));
+    }
+  }, [activeChatId, chatMessagePagination]);
 
   const handleDeleteChat = async (chatId: string) => {
     if (!user) {
@@ -502,6 +657,17 @@ export function ChatApp() {
             : chat,
         ),
       );
+      setChatMessagePagination((prev) => ({
+        ...prev,
+        [chatId]: {
+          oldestCreatedAt:
+            mappedMessages.length > 0
+              ? new Date(mappedMessages[0].createdAt).toISOString()
+              : null,
+          hasOlder: true,
+          isLoading: false,
+        },
+      }));
     } catch (error) {
       console.error("Story summarization failed", error);
     }
@@ -873,6 +1039,13 @@ export function ChatApp() {
               isThinking={isActiveChatThinking}
               onSendMessage={handleSendMessage}
               onRunSlashCommand={handleSlashCommand}
+              hasOlderMessages={Boolean(
+                activeChatId && chatMessagePagination[activeChatId]?.hasOlder,
+              )}
+              isLoadingOlderMessages={Boolean(
+                activeChatId && chatMessagePagination[activeChatId]?.isLoading,
+              )}
+              onLoadOlderMessages={handleLoadOlderMessages}
               onOpenChatSettings={() => {
                 if (activeChat) {
                   handleOpenChatSettings(activeChat.id);
