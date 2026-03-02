@@ -159,7 +159,9 @@ export function ChatApp() {
     const loadChats = async () => {
       const { data, error } = await supabase
         .from("chats")
-        .select("id, title, story_summary, created_at, updated_at")
+        .select(
+          "id, title, story_summary, api_profile_id, character_preset_id, instruction_preset_id, created_at, updated_at",
+        )
         .eq("user_id", resolvedUserId)
         .order("updated_at", { ascending: false });
 
@@ -182,10 +184,10 @@ export function ChatApp() {
           title: row.title || "New Chat",
           storySummary: row.story_summary,
           messages: [],
-          apiProfileId: null,
-          characterPresetId: null,
-          instructionPresetId: null,
-          settingsConfigured: false,
+          apiProfileId: row.api_profile_id,
+          characterPresetId: row.character_preset_id,
+          instructionPresetId: row.instruction_preset_id,
+          settingsConfigured: Boolean(row.api_profile_id),
           createdAt: Number.isNaN(createdAt) ? now : createdAt,
           updatedAt: Number.isNaN(updatedAt) ? now : updatedAt,
         };
@@ -333,6 +335,8 @@ export function ChatApp() {
   );
   const editingChat = chats.find((chat) => chat.id === chatSettingsChatId) ?? null;
   const activeChatInputLocked = Boolean(activeChat && !activeChat.apiProfileId);
+  const shouldShowSetupRequired =
+    activeChatInputLocked && (activeChat?.messages.length ?? 0) === 0;
   const hasApiProfiles = apiProfiles.length > 0;
   const activeInstructionPreset = instructionPresets.find(
     (preset) => preset.id === activeChat?.instructionPresetId,
@@ -786,8 +790,6 @@ export function ChatApp() {
         body: JSON.stringify({
           chatId: requestChatId,
           content: userMessage.content,
-          provider: selectedProfile.provider,
-          model: selectedProfile.model,
           instructionContent: selectedInstructionPreset?.content,
           characterContent: selectedCharacterPreset?.content,
         }),
@@ -929,20 +931,46 @@ export function ChatApp() {
     if (!chatSettingsChatId) {
       return;
     }
+    const targetChatId = chatSettingsChatId;
 
-    setChats((prev) =>
-      prev.map((chat) =>
-        chat.id === chatSettingsChatId
-          ? {
-              ...chat,
-              ...values,
-              settingsConfigured: Boolean(values.apiProfileId),
-              updatedAt: Date.now(),
-            }
-          : chat,
-      ),
-    );
-    setChatSettingsChatId(null);
+    void (async () => {
+      const { data, error } = await supabase
+        .from("chats")
+        .update({
+          api_profile_id: values.apiProfileId,
+          character_preset_id: values.characterPresetId,
+          instruction_preset_id: values.instructionPresetId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", targetChatId)
+        .select("api_profile_id, character_preset_id, instruction_preset_id, updated_at")
+        .single();
+
+      if (error || !data) {
+        console.error("Failed to persist chat settings.", error);
+        return;
+      }
+
+      const updatedAt = Date.parse(data.updated_at);
+      const fallbackUpdatedAt = Date.now();
+
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === targetChatId
+            ? {
+                ...chat,
+                ...values,
+                apiProfileId: data.api_profile_id,
+                characterPresetId: data.character_preset_id,
+                instructionPresetId: data.instruction_preset_id,
+                settingsConfigured: Boolean(data.api_profile_id),
+                updatedAt: Number.isNaN(updatedAt) ? fallbackUpdatedAt : updatedAt,
+              }
+            : chat,
+        ),
+      );
+      setChatSettingsChatId(null);
+    })();
   };
 
   return (
@@ -1034,7 +1062,7 @@ export function ChatApp() {
               chat={activeChat}
               modelLabel={activeChatModelLabel}
               inputDisabled={activeChatInputLocked}
-              setupRequired={activeChatInputLocked}
+              setupRequired={shouldShowSetupRequired}
               hasApiProfiles={hasApiProfiles}
               isThinking={isActiveChatThinking}
               onSendMessage={handleSendMessage}
