@@ -1,3 +1,5 @@
+import { decryptApiKey } from "@/lib/server/api-key-crypto";
+
 const NO_API_KEY_CONFIGURED_MESSAGE = "No API key configured for this provider.";
 
 function toCanonicalProvider(providerRaw: string): string {
@@ -70,5 +72,17 @@ export async function getUserProviderApiKey(params: {
     return { apiKey: null, error: NO_API_KEY_CONFIGURED_MESSAGE };
   }
 
-  return { apiKey: matched.encrypted_key.trim(), error: null };
+  try {
+    const decrypted = decryptApiKey(matched.encrypted_key);
+    if (!decrypted.trim()) {
+      return { apiKey: null, error: NO_API_KEY_CONFIGURED_MESSAGE };
+    }
+
+    return { apiKey: decrypted.trim(), error: null };
+  } catch (error) {
+    return {
+      apiKey: null,
+      error: error instanceof Error ? error.message : "Could not decrypt API key.",
+    };
+  }
 }

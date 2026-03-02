@@ -9,22 +9,6 @@ import { ApiProfile, SettingsTab } from "@/types/settings";
 import { ApiProfileList } from "./api-profile-list";
 import { SettingsTabs } from "./settings-tabs";
 
-function canonicalizeProvider(providerRaw: string): string {
-  const provider = providerRaw.trim().toLowerCase();
-
-  if (provider === "grok" || provider === "xai" || provider === "x.ai") {
-    return "xai";
-  }
-  if (provider === "google" || provider === "gemini") {
-    return "google";
-  }
-  if (provider === "kimi" || provider === "moonshot" || provider === "moonshot ai") {
-    return "kimi";
-  }
-
-  return provider;
-}
-
 export function SettingsForm() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<SettingsTab>("api");
@@ -38,47 +22,27 @@ export function SettingsForm() {
     let cancelled = false;
 
     const loadProfiles = async () => {
-      const [profilesResult, keysResult] = await Promise.all([
-        supabase
-          .from("api_profiles")
-          .select("id, name, provider, model, created_at, updated_at")
-          .eq("user_id", user.id)
-          .order("updated_at", { ascending: false }),
-        supabase
-          .from("api_keys")
-          .select("provider, encrypted_key")
-          .eq("user_id", user.id),
-      ]);
+      const { data, error } = await supabase
+        .from("api_profiles")
+        .select("id, name, provider, model, created_at, updated_at")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false });
 
       if (cancelled) {
         return;
       }
 
-      if (profilesResult.error) {
-        console.error("Failed to load API profiles from Supabase.", profilesResult.error);
+      if (error) {
+        console.error("Failed to load API profiles from Supabase.", error);
         return;
       }
 
-      if (keysResult.error) {
-        console.error("Failed to load API keys from Supabase.", keysResult.error);
-        return;
-      }
-
-      const keyByProvider = new Map<string, string>();
-      for (const row of keysResult.data ?? []) {
-        const canonicalProvider = canonicalizeProvider(row.provider);
-        if (!canonicalProvider || !row.encrypted_key?.trim()) {
-          continue;
-        }
-        keyByProvider.set(canonicalProvider, row.encrypted_key.trim());
-      }
-
-      const nextProfiles: ApiProfile[] = (profilesResult.data ?? []).map((row) => ({
+      const nextProfiles: ApiProfile[] = (data ?? []).map((row) => ({
         id: row.id,
         name: row.name,
         provider: row.provider,
         model: row.model,
-        apiKey: keyByProvider.get(canonicalizeProvider(row.provider)) ?? "",
+        apiKey: "",
       }));
       setProfiles(nextProfiles);
     };
@@ -99,40 +63,33 @@ export function SettingsForm() {
     }
 
     const provider = params.provider.trim();
-    const canonicalProvider = canonicalizeProvider(provider);
     const apiKey = params.apiKey.trim();
 
-    if (!canonicalProvider) {
+    if (!provider) {
       throw new Error("Provider is required.");
     }
 
-    if (!apiKey) {
-      const { error: deleteError } = await supabase
-        .from("api_keys")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("provider", canonicalProvider);
-
-      if (deleteError) {
-        throw new Error(deleteError.message);
-      }
-      return;
+    const { data: authData, error: authError } = await supabase.auth.getSession();
+    if (authError || !authData.session?.access_token) {
+      throw new Error("Unable to resolve authenticated session.");
     }
 
-    const { error } = await supabase
-      .from("api_keys")
-      .upsert(
-        {
-          user_id: user.id,
-          provider: canonicalProvider,
-          encrypted_key: apiKey,
-          created_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,provider" },
+    const response = await fetch("/api/keys", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authData.session.access_token}`,
+      },
+      body: JSON.stringify({
+        provider,
+        apiKey,
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        typeof payload?.error === "string" ? payload.error : "Could not save provider API key.",
       );
-
-    if (error) {
-      throw new Error(error.message);
     }
   }, [user]);
 
