@@ -9,8 +9,6 @@ import { ApiProfile } from "@/types/settings";
 interface SendRequestBody {
   chatId?: string;
   content?: string;
-  provider?: string;
-  model?: string;
   instructionContent?: string;
   characterContent?: string;
 }
@@ -63,21 +61,16 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as SendRequestBody;
     const chatId = body.chatId?.trim() ?? "";
     const content = body.content?.trim() ?? "";
-    const provider = body.provider?.trim() ?? "";
-    const model = body.model?.trim() ?? "";
     const instructionContent = body.instructionContent;
     const characterContent = body.characterContent;
 
     if (!chatId || !content) {
       return NextResponse.json({ error: "chatId and content are required." }, { status: 400 });
     }
-    if (!provider || !model) {
-      return NextResponse.json({ error: "provider and model are required." }, { status: 400 });
-    }
 
     const { data: chatRow, error: chatError } = await supabase
       .from("chats")
-      .select("id, story_summary, user_id")
+      .select("id, story_summary, user_id, api_profile_id")
       .eq("id", chatId)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -86,6 +79,22 @@ export async function POST(request: NextRequest) {
     }
     if (!chatRow) {
       return NextResponse.json({ error: "Chat not found." }, { status: 404 });
+    }
+    if (!chatRow.api_profile_id) {
+      return NextResponse.json({ error: "No API profile selected for this chat." }, { status: 400 });
+    }
+
+    const { data: profileRow, error: profileError } = await supabase
+      .from("api_profiles")
+      .select("id, provider, model, user_id")
+      .eq("id", chatRow.api_profile_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (profileError) {
+      return NextResponse.json({ error: profileError.message }, { status: 500 });
+    }
+    if (!profileRow) {
+      return NextResponse.json({ error: "Selected API profile not found." }, { status: 400 });
     }
 
     const nowIso = new Date().toISOString();
@@ -128,7 +137,7 @@ export async function POST(request: NextRequest) {
     const { apiKey, error: apiKeyError } = await getUserProviderApiKey({
       supabase,
       userId: user.id,
-      provider,
+      provider: profileRow.provider,
     });
     if (apiKeyError) {
       if (apiKeyError === getMissingProviderKeyMessage()) {
@@ -140,8 +149,8 @@ export async function POST(request: NextRequest) {
     const serverProfile: ApiProfile = {
       id: "server-profile",
       name: "Server Profile",
-      provider,
-      model,
+      provider: profileRow.provider,
+      model: profileRow.model,
       apiKey: apiKey ?? "",
     };
 
