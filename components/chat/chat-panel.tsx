@@ -1,9 +1,18 @@
 "use client";
 
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
-import { ArrowUp, ChevronDown, SlidersHorizontal } from "lucide-react";
+import {
+  ArrowUp,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Pencil,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 
-import { ChatSession } from "@/types/chat";
+import { ChatMessage, ChatSession } from "@/types/chat";
 
 interface ChatPanelProps {
   chat: ChatSession | null;
@@ -17,6 +26,8 @@ interface ChatPanelProps {
   onSendMessage: (content: string) => void;
   onRunSlashCommand: (commandId: string) => void | Promise<void>;
   onLoadOlderMessages: () => Promise<void>;
+  onEditMessage: (messageId: string, content: string) => Promise<void>;
+  onActivateMessageVersion: (targetVersionId: string) => Promise<void>;
   onOpenChatSettings: () => void;
 }
 
@@ -157,6 +168,8 @@ export function ChatPanel({
   onSendMessage,
   onRunSlashCommand,
   onLoadOlderMessages,
+  onEditMessage,
+  onActivateMessageVersion,
   onOpenChatSettings,
 }: ChatPanelProps) {
   const TEXTAREA_MAX_HEIGHT = 168;
@@ -165,6 +178,9 @@ export function ChatPanel({
   const [inputBarHeight, setInputBarHeight] = useState(88);
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const [activeCommandIndex, setActiveCommandIndex] = useState(0);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -314,6 +330,18 @@ export function ChatPanel({
     setIsComposerExpanded(nextHeight > 36);
   }, [inputValue]);
 
+  useEffect(() => {
+    if (!chat || !editingMessageId) {
+      return;
+    }
+
+    const editingMessage = chat.messages.find((message) => message.id === editingMessageId);
+    if (!editingMessage) {
+      setEditingMessageId(null);
+      setEditingValue("");
+    }
+  }, [chat, editingMessageId]);
+
   const executeSlashCommand = (commandId: string) => {
     void onRunSlashCommand(commandId);
     setInputValue("");
@@ -387,6 +415,36 @@ export function ChatPanel({
     }
   };
 
+  const handleStartEditingMessage = (message: ChatMessage) => {
+    setEditingMessageId(message.id);
+    setEditingValue(message.content);
+  };
+
+  const handleCancelEditingMessage = () => {
+    setEditingMessageId(null);
+    setEditingValue("");
+  };
+
+  const handleSubmitMessageEdit = async () => {
+    if (!editingMessageId) {
+      return;
+    }
+
+    const trimmed = editingValue.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    setIsSubmittingEdit(true);
+    try {
+      await onEditMessage(editingMessageId, trimmed);
+      setEditingMessageId(null);
+      setEditingValue("");
+    } finally {
+      setIsSubmittingEdit(false);
+    }
+  };
+
   return (
     <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
       <header className="hidden items-start gap-3 px-8 pb-4 pt-7 md:flex">
@@ -445,6 +503,13 @@ export function ChatPanel({
               const isSummarySystemNotice =
                 message.role === "assistant" &&
                 isSummaryNotice(message.content);
+              const canVersionSwitch =
+                message.role === "user" && message.versions.length > 1;
+              const previousVersion = message.versions[message.activeVersionIndex - 1] ?? null;
+              const nextVersion = message.versions[message.activeVersionIndex + 1] ?? null;
+              const isEditingThisMessage = editingMessageId === message.id;
+              const canEditMessage =
+                message.role === "user" && !isSummarySystemNotice && !isTransportError;
 
               return (
                 <div
@@ -460,17 +525,137 @@ export function ChatPanel({
                       preservedMessagesForDev={chat?.messages.slice(0, index)}
                     />
                   ) : message.role === "user" ? (
-                    <div className="max-w-[88%] rounded-2xl bg-zinc-800 px-4 py-3 text-[15px] leading-relaxed text-zinc-100 sm:max-w-[78%] sm:text-sm">
-                      {message.content}
+                    <div className="max-w-[88%] space-y-2 sm:max-w-[78%]">
+                      <div className="rounded-2xl bg-zinc-800 px-4 py-3 text-[15px] leading-relaxed text-zinc-100 sm:text-sm">
+                        {isEditingThisMessage ? (
+                          <div className="space-y-3">
+                            <textarea
+                              value={editingValue}
+                              onChange={(event) => setEditingValue(event.target.value)}
+                              rows={4}
+                              disabled={isSubmittingEdit}
+                              className="w-full resize-y rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm leading-6 text-zinc-100 outline-none"
+                            />
+                            <div className="flex justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={handleCancelEditingMessage}
+                                disabled={isSubmittingEdit}
+                                className="inline-flex items-center gap-1 rounded-full border border-zinc-600 px-3 py-1.5 text-xs text-zinc-300 transition hover:bg-zinc-700 disabled:opacity-50"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                                <span>Cancel</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  void handleSubmitMessageEdit();
+                                }}
+                                disabled={isSubmittingEdit || !editingValue.trim()}
+                                className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-900 transition hover:bg-white disabled:opacity-50"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                                <span>Save</span>
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          message.content
+                        )}
+                      </div>
+                      {(canVersionSwitch || canEditMessage) && (
+                        <div className="flex items-center justify-end gap-1 text-[11px] text-zinc-500">
+                          {canVersionSwitch && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (previousVersion) {
+                                    void onActivateMessageVersion(previousVersion.id);
+                                  }
+                                }}
+                                disabled={!previousVersion || isThinking}
+                                aria-label="Show previous message version"
+                                className="rounded-full p-1 transition hover:bg-zinc-800 hover:text-zinc-300 disabled:opacity-40"
+                              >
+                                <ChevronLeft className="h-3.5 w-3.5" />
+                              </button>
+                              <span>
+                                {message.activeVersionIndex + 1}/{message.versions.length}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (nextVersion) {
+                                    void onActivateMessageVersion(nextVersion.id);
+                                  }
+                                }}
+                                disabled={!nextVersion || isThinking}
+                                aria-label="Show next message version"
+                                className="rounded-full p-1 transition hover:bg-zinc-800 hover:text-zinc-300 disabled:opacity-40"
+                              >
+                                <ChevronRight className="h-3.5 w-3.5" />
+                              </button>
+                            </>
+                          )}
+                          {canEditMessage && (
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditingMessage(message)}
+                              disabled={isThinking || isSubmittingEdit}
+                              className="inline-flex items-center gap-1 rounded-full px-2 py-1 transition hover:bg-zinc-800 hover:text-zinc-300 disabled:opacity-40"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              <span>Edit</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ) : isTransportError ? (
                     <article className="w-full max-w-3xl rounded-xl border border-rose-500/50 bg-rose-950/30 px-4 py-3 text-sm leading-6 whitespace-pre-wrap text-rose-200">
                       {message.content}
                     </article>
                   ) : (
-                    <article className="w-full max-w-3xl px-1 text-[15px] leading-7 whitespace-pre-wrap text-zinc-200">
-                      {message.content}
-                    </article>
+                    <div className="w-full max-w-3xl space-y-2 px-1">
+                      <article className="text-[15px] leading-7 whitespace-pre-wrap text-zinc-200">
+                        {isEditingThisMessage ? (
+                          <div className="max-w-3xl rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
+                            <textarea
+                              value={editingValue}
+                              onChange={(event) => setEditingValue(event.target.value)}
+                              rows={4}
+                              disabled={isSubmittingEdit}
+                              className="w-full resize-y rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm leading-6 text-zinc-100 outline-none"
+                            />
+                            <div className="mt-3 flex justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={handleCancelEditingMessage}
+                                disabled={isSubmittingEdit}
+                                className="inline-flex items-center gap-1 rounded-full border border-zinc-600 px-3 py-1.5 text-xs text-zinc-300 transition hover:bg-zinc-700 disabled:opacity-50"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                                <span>Cancel</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  void handleSubmitMessageEdit();
+                                }}
+                                disabled={isSubmittingEdit || !editingValue.trim()}
+                                className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-900 transition hover:bg-white disabled:opacity-50"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                                <span>Save</span>
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          message.content
+                        )}
+                      </article>
+                    </div>
                   )}
                 </div>
               );

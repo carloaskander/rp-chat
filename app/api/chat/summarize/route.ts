@@ -2,14 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 import { generateStorySummary } from "@/lib/ai-client";
-import { getMissingProviderKeyMessage, getUserProviderApiKey } from "@/lib/server/user-api-key";
+import {
+  isModelContextMessage,
+  isSummaryNoticeContent,
+  loadActiveChatMessages,
+  SUMMARY_NOTICE_PREFIX,
+} from "@/lib/server/chat-messages";
+import {
+  getMissingProviderKeyMessage,
+  getUserProviderApiKey,
+  UserApiKeyLookupClient,
+} from "@/lib/server/user-api-key";
 import { ChatMessage } from "@/types/chat";
 import { ApiProfile } from "@/types/settings";
 
 interface SummarizeRequestBody {
   chatId?: string;
-  provider?: string;
-  model?: string;
   instructionContent?: string;
   characterContent?: string;
   force?: boolean;
@@ -26,7 +34,6 @@ const SUMMARY_KEEP_RECENT_TOKEN_ESTIMATE = 1400;
 const SUMMARY_MIN_CONDENSE_TOKEN_ESTIMATE = 900;
 const TOKEN_ESTIMATE_CHARS_PER_TOKEN = 4;
 const TOKEN_ESTIMATE_MESSAGE_OVERHEAD = 8;
-const SUMMARY_NOTICE_PREFIX = "[summary-notice]";
 const SUMMARY_NOTICE_TEXT =
   "Earlier parts of this conversation were summarized to keep context efficient.";
 
@@ -36,28 +43,6 @@ function getRequiredEnv(name: string): string {
     throw new Error(`Missing required environment variable: ${name}`);
   }
   return value;
-}
-
-function mapRole(role: string): ChatMessage["role"] {
-  return role === "assistant" ? "assistant" : "user";
-}
-
-function isTransportFailure(message: ChatMessage): boolean {
-  return (
-    message.role === "assistant" &&
-    message.content.startsWith("Request failed:")
-  );
-}
-
-function isSummaryNotice(message: ChatMessage): boolean {
-  return (
-    message.role === "assistant" &&
-    message.content.startsWith(SUMMARY_NOTICE_PREFIX)
-  );
-}
-
-function isModelContextMessage(message: ChatMessage): boolean {
-  return !isTransportFailure(message) && !isSummaryNotice(message);
 }
 
 function estimateMessageTokens(message: ChatMessage): number {
@@ -153,8 +138,6 @@ export async function POST(request: NextRequest) {
 
     const body = (await request.json()) as SummarizeRequestBody;
     const chatId = body.chatId?.trim() ?? "";
-    const provider = body.provider?.trim() ?? "";
-    const model = body.model?.trim() ?? "";
     const force = Boolean(body.force);
     const instructionContent = body.instructionContent;
     const characterContent = body.characterContent;
@@ -162,13 +145,10 @@ export async function POST(request: NextRequest) {
     if (!chatId) {
       return NextResponse.json({ error: "chatId is required." }, { status: 400 });
     }
-    if (!provider || !model) {
-      return NextResponse.json({ error: "provider and model are required." }, { status: 400 });
-    }
 
     const { data: chatRow, error: chatError } = await supabase
       .from("chats")
-      .select("id, user_id, story_summary")
+      .select("id, user_id, story_summary, api_profile_id")
       .eq("id", chatId)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -178,26 +158,31 @@ export async function POST(request: NextRequest) {
     if (!chatRow) {
       return NextResponse.json({ error: "Chat not found." }, { status: 404 });
     }
-
-    const { data: messageRows, error: messagesError } = await supabase
-      .from("messages")
-      .select("id, role, content, created_at")
-      .eq("chat_id", chatId)
-      .eq("is_archived", false)
-      .order("created_at", { ascending: true });
-    if (messagesError) {
-      return NextResponse.json({ error: messagesError.message }, { status: 500 });
+    if (!chatRow.api_profile_id) {
+      return NextResponse.json({ error: "No API profile selected for this chat." }, { status: 400 });
     }
 
-    const now = Date.now();
-    const messages: ChatMessage[] = (messageRows ?? []).map((row) => ({
-      id: row.id,
-      role: mapRole(row.role),
-      content: row.content,
-      createdAt: Number.isNaN(Date.parse(row.created_at))
-        ? now
-        : Date.parse(row.created_at),
-    }));
+    const { data: profileRow, error: profileError } = await supabase
+      .from("api_profiles")
+      .select("id, provider, model, user_id")
+      .eq("id", chatRow.api_profile_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (profileError) {
+      return NextResponse.json({ error: profileError.message }, { status: 500 });
+    }
+    if (!profileRow) {
+      return NextResponse.json({ error: "Selected API profile not found." }, { status: 400 });
+    }
+
+    const { messages, error: messagesError } = await loadActiveChatMessages(
+      supabase,
+      chatId,
+      { includeArchived: false },
+    );
+    if (messagesError || !messages) {
+      return NextResponse.json({ error: messagesError ?? "Failed to load messages." }, { status: 500 });
+    }
 
     const lastContextMessage = [...messages]
       .reverse()
@@ -239,9 +224,9 @@ export async function POST(request: NextRequest) {
     }
 
     const { apiKey, error: apiKeyError } = await getUserProviderApiKey({
-      supabase,
+      supabase: supabase as unknown as UserApiKeyLookupClient,
       userId: user.id,
-      provider,
+      provider: profileRow.provider,
     });
     if (apiKeyError) {
       if (apiKeyError === getMissingProviderKeyMessage()) {
@@ -253,8 +238,8 @@ export async function POST(request: NextRequest) {
     const serverProfile: ApiProfile = {
       id: "server-profile",
       name: "Server Profile",
-      provider,
-      model,
+      provider: profileRow.provider,
+      model: profileRow.model,
       apiKey: apiKey ?? "",
     };
 
@@ -275,7 +260,7 @@ export async function POST(request: NextRequest) {
       idsToArchive.add(message.id);
     }
     for (const message of messages.slice(condenseFromIndex)) {
-      if (isSummaryNotice(message)) {
+      if (isSummaryNoticeContent(message.content)) {
         idsToArchive.add(message.id);
       }
     }
@@ -294,6 +279,7 @@ export async function POST(request: NextRequest) {
     const summaryNoticeContent = `${SUMMARY_NOTICE_PREFIX} ${SUMMARY_NOTICE_TEXT}`;
     const summaryNoticeId = crypto.randomUUID();
     const summaryNoticeCreatedAtIso = new Date().toISOString();
+    const nextSequenceNumber = (messages[messages.length - 1]?.sequenceNumber ?? 0) + 1;
     const { error: noticeError } = await supabase.from("messages").insert({
       id: summaryNoticeId,
       chat_id: chatId,
@@ -301,6 +287,9 @@ export async function POST(request: NextRequest) {
       content: summaryNoticeContent,
       created_at: summaryNoticeCreatedAtIso,
       is_archived: false,
+      version_group_id: summaryNoticeId,
+      sequence_number: nextSequenceNumber,
+      is_active: true,
     });
     if (noticeError) {
       return NextResponse.json({ error: noticeError.message }, { status: 500 });
@@ -318,24 +307,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: chatUpdateError.message }, { status: 500 });
     }
 
-    const { data: remainingRows, error: remainingError } = await supabase
-      .from("messages")
-      .select("id, role, content, created_at")
-      .eq("chat_id", chatId)
-      .eq("is_archived", false)
-      .order("created_at", { ascending: true });
-    if (remainingError) {
-      return NextResponse.json({ error: remainingError.message }, { status: 500 });
+    const { messages: remainingMessages, error: remainingError } =
+      await loadActiveChatMessages(supabase, chatId, { includeArchived: false });
+    if (remainingError || !remainingMessages) {
+      return NextResponse.json({ error: remainingError ?? "Failed to load messages." }, { status: 500 });
     }
-
-    const remainingMessages: ChatMessage[] = (remainingRows ?? []).map((row) => ({
-      id: row.id,
-      role: mapRole(row.role),
-      content: row.content,
-      createdAt: Number.isNaN(Date.parse(row.created_at))
-        ? Date.now()
-        : Date.parse(row.created_at),
-    }));
 
     return NextResponse.json({
       summarized: true,

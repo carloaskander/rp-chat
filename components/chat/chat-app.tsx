@@ -13,7 +13,7 @@ import {
 } from "@/lib/mock-data";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { supabase } from "@/lib/supabase";
-import { ChatMessage, ChatSession, Preset, SidebarView } from "@/types/chat";
+import { ChatMessage, ChatSession, MessageVersion, Preset, SidebarView } from "@/types/chat";
 import { ApiProfile } from "@/types/settings";
 import { useAuth } from "@/components/auth/auth-provider";
 
@@ -26,9 +26,98 @@ import { Sidebar } from "./sidebar";
 const MESSAGE_PAGE_SIZE = 50;
 
 interface ChatMessagePaginationState {
-  oldestCreatedAt: string | null;
+  oldestSequenceNumber: number | null;
   hasOlder: boolean;
   isLoading: boolean;
+}
+
+interface ChatMessageRow {
+  id: string;
+  role: string;
+  content: string;
+  created_at: string;
+  version_group_id: string;
+  sequence_number: number;
+}
+
+interface MessageVersionRow {
+  id: string;
+  created_at: string;
+  version_group_id: string;
+}
+
+function buildVersionsByGroup(rows: MessageVersionRow[]): Map<string, MessageVersion[]> {
+  const versionsByGroup = new Map<string, MessageVersion[]>();
+
+  for (const row of rows) {
+    const currentVersions = versionsByGroup.get(row.version_group_id) ?? [];
+    const parsedCreatedAt = Date.parse(row.created_at);
+    currentVersions.push({
+      id: row.id,
+      createdAt: Number.isNaN(parsedCreatedAt) ? Date.now() : parsedCreatedAt,
+    });
+    versionsByGroup.set(row.version_group_id, currentVersions);
+  }
+
+  return versionsByGroup;
+}
+
+function mapRowsToChatMessages(
+  rows: ChatMessageRow[],
+  versionsByGroup: Map<string, MessageVersion[]>,
+): ChatMessage[] {
+  return rows.map((row) => {
+    const parsedCreatedAt = Date.parse(row.created_at);
+    const createdAt = Number.isNaN(parsedCreatedAt) ? Date.now() : parsedCreatedAt;
+    const versions = versionsByGroup.get(row.version_group_id) ?? [
+      {
+        id: row.id,
+        createdAt,
+      },
+    ];
+    const activeVersionIndex = Math.max(
+      versions.findIndex((version) => version.id === row.id),
+      0,
+    );
+
+    return {
+      id: row.id,
+      role: row.role === "assistant" ? "assistant" : "user",
+      content: row.content,
+      createdAt,
+      versionGroupId: row.version_group_id,
+      sequenceNumber: row.sequence_number,
+      versions,
+      activeVersionIndex,
+    };
+  });
+}
+
+function createSingleVersionMessage(message: {
+  id: string;
+  role: ChatMessage["role"];
+  content: string;
+  createdAt: number;
+  sequenceNumber: number;
+  versionGroupId?: string;
+}): ChatMessage {
+  const versionGroupId = message.versionGroupId ?? message.id;
+
+  return {
+    id: message.id,
+    role: message.role,
+    content: message.content,
+    createdAt: message.createdAt,
+    versionGroupId,
+    sequenceNumber: message.sequenceNumber,
+    versions: [
+      {
+        id: message.id,
+        createdAt: message.createdAt,
+      },
+    ],
+    activeVersionIndex: 0,
+  };
 }
 
 export function ChatApp() {
@@ -99,7 +188,7 @@ export function ChatApp() {
       return;
     }
 
-    if (lastAuthEvent === "SIGNED_OUT" || lastAuthEvent === "USER_DELETED") {
+    if (lastAuthEvent === "SIGNED_OUT") {
       setResolvedUserId(null);
       setChats([]);
       setActiveChatId(null);
@@ -205,7 +294,7 @@ export function ChatApp() {
           baseChats.map((chat) => [
             chat.id,
             {
-              oldestCreatedAt: null,
+              oldestSequenceNumber: null,
               hasOlder: false,
               isLoading: false,
             } as ChatMessagePaginationState,
@@ -236,7 +325,7 @@ export function ChatApp() {
     setChatMessagePagination((prev) => ({
       ...prev,
       [chatId]: {
-        oldestCreatedAt: prev[chatId]?.oldestCreatedAt ?? null,
+        oldestSequenceNumber: prev[chatId]?.oldestSequenceNumber ?? null,
         hasOlder: prev[chatId]?.hasOlder ?? false,
         isLoading: true,
       },
@@ -245,9 +334,10 @@ export function ChatApp() {
     try {
       const { data, error } = await supabase
         .from("messages")
-        .select("id, role, content, created_at")
+        .select("id, role, content, created_at, version_group_id, sequence_number")
         .eq("chat_id", chatId)
-        .order("created_at", { ascending: false })
+        .eq("is_active", true)
+        .order("sequence_number", { ascending: false })
         .limit(MESSAGE_PAGE_SIZE);
 
       if (error) {
@@ -255,17 +345,26 @@ export function ChatApp() {
         return;
       }
 
-      const descRows = data ?? [];
+      const descRows = (data ?? []) as ChatMessageRow[];
       const ascRows = [...descRows].reverse();
-      const now = Date.now();
-      const mappedMessages: ChatMessage[] = ascRows.map((row) => ({
-        id: row.id,
-        role: row.role === "assistant" ? "assistant" : "user",
-        content: row.content,
-        createdAt: Number.isNaN(Date.parse(row.created_at))
-          ? now
-          : Date.parse(row.created_at),
-      }));
+      const versionGroupIds = [...new Set(ascRows.map((row) => row.version_group_id))];
+      const { data: versionRows, error: versionError } = versionGroupIds.length
+        ? await supabase
+          .from("messages")
+          .select("id, created_at, version_group_id")
+          .in("version_group_id", versionGroupIds)
+          .order("created_at", { ascending: true })
+        : { data: [], error: null };
+
+      if (versionError) {
+        console.error("Failed to load chat message versions from Supabase.", versionError);
+        return;
+      }
+
+      const mappedMessages = mapRowsToChatMessages(
+        ascRows,
+        buildVersionsByGroup((versionRows ?? []) as MessageVersionRow[]),
+      );
 
       setChats((prev) =>
         prev.map((chat) =>
@@ -281,7 +380,7 @@ export function ChatApp() {
       setChatMessagePagination((prev) => ({
         ...prev,
         [chatId]: {
-          oldestCreatedAt: ascRows[0]?.created_at ?? null,
+          oldestSequenceNumber: ascRows[0]?.sequence_number ?? null,
           hasOlder: descRows.length === MESSAGE_PAGE_SIZE,
           isLoading: false,
         },
@@ -291,7 +390,7 @@ export function ChatApp() {
       setChatMessagePagination((prev) => ({
         ...prev,
         [chatId]: {
-          oldestCreatedAt: prev[chatId]?.oldestCreatedAt ?? null,
+          oldestSequenceNumber: prev[chatId]?.oldestSequenceNumber ?? null,
           hasOlder: prev[chatId]?.hasOlder ?? false,
           isLoading: false,
         },
@@ -417,7 +516,7 @@ export function ChatApp() {
       return;
     }
 
-    if (!pagination.oldestCreatedAt) {
+    if (!pagination.oldestSequenceNumber) {
       setChatMessagePagination((prev) => ({
         ...prev,
         [activeChatId]: {
@@ -440,10 +539,11 @@ export function ChatApp() {
     try {
       const { data, error } = await supabase
         .from("messages")
-        .select("id, role, content, created_at")
+        .select("id, role, content, created_at, version_group_id, sequence_number")
         .eq("chat_id", activeChatId)
-        .lt("created_at", pagination.oldestCreatedAt)
-        .order("created_at", { ascending: false })
+        .eq("is_active", true)
+        .lt("sequence_number", pagination.oldestSequenceNumber)
+        .order("sequence_number", { ascending: false })
         .limit(MESSAGE_PAGE_SIZE);
 
       if (error) {
@@ -458,17 +558,33 @@ export function ChatApp() {
         return;
       }
 
-      const descRows = data ?? [];
+      const descRows = (data ?? []) as ChatMessageRow[];
       const ascRows = [...descRows].reverse();
-      const now = Date.now();
-      const olderMessages: ChatMessage[] = ascRows.map((row) => ({
-        id: row.id,
-        role: row.role === "assistant" ? "assistant" : "user",
-        content: row.content,
-        createdAt: Number.isNaN(Date.parse(row.created_at))
-          ? now
-          : Date.parse(row.created_at),
-      }));
+      const versionGroupIds = [...new Set(ascRows.map((row) => row.version_group_id))];
+      const { data: versionRows, error: versionError } = versionGroupIds.length
+        ? await supabase
+          .from("messages")
+          .select("id, created_at, version_group_id")
+          .in("version_group_id", versionGroupIds)
+          .order("created_at", { ascending: true })
+        : { data: [], error: null };
+
+      if (versionError) {
+        console.error("Failed to load older message versions from Supabase.", versionError);
+        setChatMessagePagination((prev) => ({
+          ...prev,
+          [activeChatId]: {
+            ...prev[activeChatId],
+            isLoading: false,
+          },
+        }));
+        return;
+      }
+
+      const olderMessages = mapRowsToChatMessages(
+        ascRows,
+        buildVersionsByGroup((versionRows ?? []) as MessageVersionRow[]),
+      );
 
       if (olderMessages.length > 0) {
         setChats((prev) =>
@@ -486,7 +602,8 @@ export function ChatApp() {
       setChatMessagePagination((prev) => ({
         ...prev,
         [activeChatId]: {
-          oldestCreatedAt: ascRows[0]?.created_at ?? pagination.oldestCreatedAt,
+          oldestSequenceNumber:
+            ascRows[0]?.sequence_number ?? pagination.oldestSequenceNumber,
           hasOlder: descRows.length === MESSAGE_PAGE_SIZE,
           isLoading: false,
         },
@@ -637,12 +754,20 @@ export function ChatApp() {
           role: string;
           content: string;
           createdAt: number;
+          versionGroupId: string;
+          sequenceNumber: number;
+          versions: MessageVersion[];
+          activeVersionIndex: number;
         }) => ({
           id: message.id,
           role: message.role === "assistant" ? "assistant" : "user",
           content: message.content,
           createdAt:
             typeof message.createdAt === "number" ? message.createdAt : Date.now(),
+          versionGroupId: message.versionGroupId,
+          sequenceNumber: message.sequenceNumber,
+          versions: message.versions,
+          activeVersionIndex: message.activeVersionIndex,
         }))
         : [];
 
@@ -664,10 +789,7 @@ export function ChatApp() {
       setChatMessagePagination((prev) => ({
         ...prev,
         [chatId]: {
-          oldestCreatedAt:
-            mappedMessages.length > 0
-              ? new Date(mappedMessages[0].createdAt).toISOString()
-              : null,
+          oldestSequenceNumber: mappedMessages[0]?.sequenceNumber ?? null,
           hasOlder: true,
           isLoading: false,
         },
@@ -747,15 +869,18 @@ export function ChatApp() {
       (preset) => preset.id === targetChat.characterPresetId,
     );
     const requestChatId = activeChatId;
+    const nextSequenceNumber =
+      (targetChat.messages[targetChat.messages.length - 1]?.sequenceNumber ?? 0) + 1;
 
     const now = Date.now();
 
-    const userMessage: ChatMessage = {
+    const userMessage = createSingleVersionMessage({
       id: createId(),
       role: "user",
       content,
       createdAt: now,
-    };
+      sequenceNumber: nextSequenceNumber,
+    });
 
     setChats((prev) =>
       prev.map((chat, index) => {
@@ -804,15 +929,45 @@ export function ChatApp() {
         );
       }
 
-      const assistantMessage: ChatMessage = {
-        id: payload.assistantMessage?.id ?? createId(),
-        role: "assistant",
-        content: payload.assistantMessage?.content ?? "",
-        createdAt:
-          typeof payload.assistantMessage?.createdAt === "number"
-            ? payload.assistantMessage.createdAt
-            : Date.now(),
-      };
+      const canonicalUserMessage = payload.userMessage
+        ? createSingleVersionMessage({
+          id: payload.userMessage.id,
+          role: "user",
+          content: payload.userMessage.content,
+          createdAt:
+            typeof payload.userMessage.createdAt === "number"
+              ? payload.userMessage.createdAt
+              : now,
+          sequenceNumber:
+            typeof payload.userMessage.sequenceNumber === "number"
+              ? payload.userMessage.sequenceNumber
+              : nextSequenceNumber,
+          versionGroupId: payload.userMessage.versionGroupId,
+        })
+        : userMessage;
+
+      const assistantMessage = payload.assistantMessage
+        ? createSingleVersionMessage({
+          id: payload.assistantMessage.id,
+          role: "assistant",
+          content: payload.assistantMessage.content,
+          createdAt:
+            typeof payload.assistantMessage.createdAt === "number"
+              ? payload.assistantMessage.createdAt
+              : Date.now(),
+          sequenceNumber:
+            typeof payload.assistantMessage.sequenceNumber === "number"
+              ? payload.assistantMessage.sequenceNumber
+              : nextSequenceNumber + 1,
+          versionGroupId: payload.assistantMessage.versionGroupId,
+        })
+        : createSingleVersionMessage({
+          id: createId(),
+          role: "assistant",
+          content: "",
+          createdAt: Date.now(),
+          sequenceNumber: nextSequenceNumber + 1,
+        });
 
       setChats((prev) =>
         prev.map((chat, index) => {
@@ -820,7 +975,19 @@ export function ChatApp() {
             return chat;
           }
 
-          const nextMessages = [...chat.messages, assistantMessage];
+          const existingMessages = [...chat.messages];
+          const optimisticUserIndex = [...existingMessages]
+            .reverse()
+            .findIndex((message) => message.id === userMessage.id);
+
+          if (optimisticUserIndex >= 0) {
+            existingMessages[existingMessages.length - 1 - optimisticUserIndex] =
+              canonicalUserMessage;
+          } else {
+            existingMessages.push(canonicalUserMessage);
+          }
+
+          const nextMessages = [...existingMessages, assistantMessage];
           return {
             ...chat,
             messages: nextMessages,
@@ -838,7 +1005,7 @@ export function ChatApp() {
         characterContent: selectedCharacterPreset?.content,
       });
     } catch (error) {
-      const assistantMessage: ChatMessage = {
+      const assistantMessage = createSingleVersionMessage({
         id: createId(),
         role: "assistant",
         content:
@@ -846,7 +1013,8 @@ export function ChatApp() {
             ? `Request failed: ${error.message}`
             : "Request failed: unknown error",
         createdAt: Date.now(),
-      };
+        sequenceNumber: nextSequenceNumber + 1,
+      });
 
       setChats((prev) =>
         prev.map((chat, index) => {
@@ -867,6 +1035,106 @@ export function ChatApp() {
     } finally {
       setThinkingChatId((prev) => (prev === requestChatId ? null : prev));
     }
+  };
+
+  const handleApplyMessageMutation = async (params: {
+    messageId?: string;
+    targetVersionId?: string;
+    content?: string;
+  }) => {
+    if (!activeChat) {
+      return;
+    }
+
+    const selectedInstructionPreset = instructionPresets.find(
+      (preset) => preset.id === activeChat.instructionPresetId,
+    );
+    const selectedCharacterPreset = characterPresets.find(
+      (preset) => preset.id === activeChat.characterPresetId,
+    );
+
+    setThinkingChatId(activeChat.id);
+
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getSession();
+      if (authError || !authData.session?.access_token) {
+        throw new Error("Unable to resolve authenticated session.");
+      }
+
+      const response = await fetch("/api/chat/messages", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authData.session.access_token}`,
+        },
+        body: JSON.stringify({
+          chatId: activeChat.id,
+          messageId: params.messageId,
+          targetVersionId: params.targetVersionId,
+          content: params.content,
+          instructionContent: selectedInstructionPreset?.content,
+          characterContent: selectedCharacterPreset?.content,
+        }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          typeof payload?.error === "string"
+            ? payload.error
+            : "Failed to update message version.",
+        );
+      }
+
+      const mappedMessages: ChatMessage[] = Array.isArray(payload.messages)
+        ? payload.messages.map((message: ChatMessage) => ({
+          ...message,
+          role: message.role === "assistant" ? "assistant" : "user",
+        }))
+        : [];
+
+      setChats((prev) =>
+        prev.map((chat, index) =>
+          chat.id === activeChat.id
+            ? {
+                ...chat,
+                messages: mappedMessages,
+                storySummary: null,
+                title: buildChatTitle(mappedMessages, index + 1),
+                updatedAt:
+                  typeof payload.updatedAt === "number"
+                    ? payload.updatedAt
+                    : Date.now(),
+              }
+            : chat,
+        ),
+      );
+      setChatMessagePagination((prev) => ({
+        ...prev,
+        [activeChat.id]: {
+          oldestSequenceNumber: mappedMessages[0]?.sequenceNumber ?? null,
+          hasOlder: false,
+          isLoading: false,
+        },
+      }));
+    } catch (error) {
+      console.error("Failed to mutate chat message.", error);
+    } finally {
+      setThinkingChatId((prev) => (prev === activeChat.id ? null : prev));
+    }
+  };
+
+  const handleEditMessage = async (messageId: string, content: string) => {
+    await handleApplyMessageMutation({
+      messageId,
+      content,
+    });
+  };
+
+  const handleActivateMessageVersion = async (targetVersionId: string) => {
+    await handleApplyMessageMutation({
+      targetVersionId,
+    });
   };
 
   const createPresetHandlers = (
@@ -1074,6 +1342,8 @@ export function ChatApp() {
                 activeChatId && chatMessagePagination[activeChatId]?.isLoading,
               )}
               onLoadOlderMessages={handleLoadOlderMessages}
+              onEditMessage={handleEditMessage}
+              onActivateMessageVersion={handleActivateMessageVersion}
               onOpenChatSettings={() => {
                 if (activeChat) {
                   handleOpenChatSettings(activeChat.id);

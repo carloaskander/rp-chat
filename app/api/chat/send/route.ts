@@ -2,7 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 import { generateAssistantReply } from "@/lib/ai-client";
-import { getMissingProviderKeyMessage, getUserProviderApiKey } from "@/lib/server/user-api-key";
+import {
+  isModelContextMessage,
+  loadActiveChatMessages,
+} from "@/lib/server/chat-messages";
+import {
+  getMissingProviderKeyMessage,
+  getUserProviderApiKey,
+  UserApiKeyLookupClient,
+} from "@/lib/server/user-api-key";
 import { ChatMessage } from "@/types/chat";
 import { ApiProfile } from "@/types/settings";
 
@@ -19,10 +27,6 @@ function getRequiredEnv(name: string): string {
     throw new Error(`Missing required environment variable: ${name}`);
   }
   return value;
-}
-
-function mapRole(role: string): ChatMessage["role"] {
-  return role === "assistant" ? "assistant" : "user";
 }
 
 export async function POST(request: NextRequest) {
@@ -97,45 +101,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Selected API profile not found." }, { status: 400 });
     }
 
+    const { data: latestSequenceRow, error: latestSequenceError } = await supabase
+      .from("messages")
+      .select("sequence_number")
+      .eq("chat_id", chatId)
+      .order("sequence_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (latestSequenceError) {
+      return NextResponse.json({ error: latestSequenceError.message }, { status: 500 });
+    }
+
+    const nextSequenceNumber = (latestSequenceRow?.sequence_number ?? 0) + 1;
     const nowIso = new Date().toISOString();
     const userMessageId = crypto.randomUUID();
+    const userVersionGroupId = userMessageId;
     const { error: userInsertError } = await supabase.from("messages").insert({
       id: userMessageId,
       chat_id: chatId,
       role: "user",
       content,
       created_at: nowIso,
+      version_group_id: userVersionGroupId,
+      sequence_number: nextSequenceNumber,
+      is_active: true,
     });
     if (userInsertError) {
       return NextResponse.json({ error: userInsertError.message }, { status: 500 });
     }
 
-    const { data: messageRows, error: messagesError } = await supabase
-      .from("messages")
-      .select("id, role, content, created_at")
-      .eq("chat_id", chatId)
-      .eq("is_archived", false)
-      .order("created_at", { ascending: true });
-    if (messagesError) {
-      return NextResponse.json({ error: messagesError.message }, { status: 500 });
+    const { messages: activeMessages, error: activeMessagesError } =
+      await loadActiveChatMessages(supabase, chatId, { includeArchived: false });
+    if (activeMessagesError || !activeMessages) {
+      return NextResponse.json({ error: activeMessagesError ?? "Failed to load messages." }, { status: 500 });
     }
 
-    const modelMessages: ChatMessage[] = (messageRows ?? [])
-      .filter((row) => !row.content.startsWith("[summary-notice]"))
-      .filter(
-        (row) => !(row.role === "assistant" && row.content.startsWith("Request failed:")),
-      )
-      .map((row) => ({
-        id: row.id,
-        role: mapRole(row.role),
-        content: row.content,
-        createdAt: Number.isNaN(Date.parse(row.created_at))
-          ? Date.now()
-          : Date.parse(row.created_at),
-      }));
+    const modelMessages: ChatMessage[] = activeMessages.filter((message) =>
+      isModelContextMessage(message),
+    );
 
     const { apiKey, error: apiKeyError } = await getUserProviderApiKey({
-      supabase,
+      supabase: supabase as unknown as UserApiKeyLookupClient,
       userId: user.id,
       provider: profileRow.provider,
     });
@@ -163,6 +169,7 @@ export async function POST(request: NextRequest) {
     });
 
     const assistantMessageId = crypto.randomUUID();
+    const assistantVersionGroupId = assistantMessageId;
     const assistantCreatedAtIso = new Date().toISOString();
     const { error: assistantInsertError } = await supabase.from("messages").insert({
       id: assistantMessageId,
@@ -170,6 +177,10 @@ export async function POST(request: NextRequest) {
       role: "assistant",
       content: reply,
       created_at: assistantCreatedAtIso,
+      version_group_id: assistantVersionGroupId,
+      sequence_number: nextSequenceNumber + 1,
+      is_active: true,
+      response_to_message_id: userMessageId,
     });
     if (assistantInsertError) {
       return NextResponse.json({ error: assistantInsertError.message }, { status: 500 });
@@ -185,11 +196,35 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
+      userMessage: {
+        id: userMessageId,
+        role: "user",
+        content,
+        createdAt: Date.parse(nowIso),
+        versionGroupId: userVersionGroupId,
+        sequenceNumber: nextSequenceNumber,
+        versions: [
+          {
+            id: userMessageId,
+            createdAt: Date.parse(nowIso),
+          },
+        ],
+        activeVersionIndex: 0,
+      },
       assistantMessage: {
         id: assistantMessageId,
         role: "assistant",
         content: reply,
         createdAt: Date.parse(assistantCreatedAtIso),
+        versionGroupId: assistantVersionGroupId,
+        sequenceNumber: nextSequenceNumber + 1,
+        versions: [
+          {
+            id: assistantMessageId,
+            createdAt: Date.parse(assistantCreatedAtIso),
+          },
+        ],
+        activeVersionIndex: 0,
       },
       updatedAt: Date.parse(assistantCreatedAtIso),
     });

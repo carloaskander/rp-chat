@@ -58,6 +58,15 @@ export const DEFAULT_CHAT_SESSIONS: ChatSession[] = [
         content:
           "Welcome to RP Chat MVP. This prototype stores chats, presets, and settings in localStorage.",
         createdAt: DEFAULT_TIMESTAMP,
+        versionGroupId: "msg-welcome-1",
+        sequenceNumber: 1,
+        versions: [
+          {
+            id: "msg-welcome-1",
+            createdAt: DEFAULT_TIMESTAMP,
+          },
+        ],
+        activeVersionIndex: 0,
       },
     ],
   },

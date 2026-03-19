@@ -338,6 +338,15 @@ export async function generateStorySummary({
     role: "user",
     content: buildSummarizationUserPrompt(existingSummary, messagesToCondense),
     createdAt: Date.now(),
+    versionGroupId: "story-summary-request",
+    sequenceNumber: 0,
+    versions: [
+      {
+        id: "story-summary-request",
+        createdAt: Date.now(),
+      },
+    ],
+    activeVersionIndex: 0,
   };
 
   return generateWithProvider(profile, [summaryRequest], systemPrompt);

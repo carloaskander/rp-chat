@@ -8,11 +8,20 @@ export type SidebarView =
 
 export type Provider = "OpenAI" | "Anthropic" | "Google";
 
+export interface MessageVersion {
+  id: string;
+  createdAt: number;
+}
+
 export interface ChatMessage {
   id: string;
   role: Role;
   content: string;
   createdAt: number;
+  versionGroupId: string;
+  sequenceNumber: number;
+  versions: MessageVersion[];
+  activeVersionIndex: number;
 }
 
 export interface ChatSession {

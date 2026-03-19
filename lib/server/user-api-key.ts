@@ -28,26 +28,28 @@ export function getMissingProviderKeyMessage(): string {
   return NO_API_KEY_CONFIGURED_MESSAGE;
 }
 
-export async function getUserProviderApiKey(params: {
-  supabase: {
-    from: (table: string) => {
-      select: (columns: string) => {
-        eq: (column: string, value: string) => {
-          order: (
-            column: string,
-            options: { ascending: boolean },
-          ) => Promise<{
-            data: Array<{
-              provider: string;
-              encrypted_key: string;
-              created_at: string;
-            }> | null;
-            error: { message: string } | null;
-          }>;
-        };
+export interface UserApiKeyLookupClient {
+  from: (table: string) => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        order: (
+          column: string,
+          options: { ascending: boolean },
+        ) => Promise<{
+          data: Array<{
+            provider: string;
+            encrypted_key: string;
+            created_at: string;
+          }> | null;
+          error: { message: string } | null;
+        }>;
       };
     };
   };
+}
+
+export async function getUserProviderApiKey(params: {
+  supabase: UserApiKeyLookupClient;
   userId: string;
   provider: string;
 }): Promise<{ apiKey: string | null; error: string | null }> {
