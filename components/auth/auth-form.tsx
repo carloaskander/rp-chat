@@ -1,12 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { Loader2, Mail } from "lucide-react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 
 export function AuthForm() {
-  const { isLoading, signInWithGoogle, sendMagicLink } = useAuth();
+  const { closeAuthModal, isLoading, signInWithGoogle, sendMagicLink } = useAuth();
   const [email, setEmail] = useState("");
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [isEmailSubmitting, setIsEmailSubmitting] = useState(false);
@@ -116,6 +117,17 @@ export function AuthForm() {
           {errorMessage ?? message}
         </p>
       )}
+
+      <div className="border-t border-zinc-800 pt-4 text-center">
+        <p className="text-sm text-zinc-500">Prefer to explore first?</p>
+        <Link
+          href="/settings?section=account"
+          onClick={closeAuthModal}
+          className="mt-2 inline-flex items-center justify-center rounded-[16px] px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+        >
+          Browse settings preview
+        </Link>
+      </div>
     </section>
   );
 }
