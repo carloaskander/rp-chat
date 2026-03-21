@@ -1,168 +1,121 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import Link from "next/link";
+import { Loader2, Mail } from "lucide-react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 
-type AuthMode = "sign-in" | "sign-up";
-
-interface AuthFormProps {
-  initialMode?: AuthMode;
-  showModeToggle?: boolean;
-}
-
-export function AuthForm({
-  initialMode = "sign-in",
-  showModeToggle = true,
-}: AuthFormProps) {
-  const { user, isLoading, signInWithEmail, signUpWithEmail, signOut } = useAuth();
-  const [mode, setMode] = useState<AuthMode>(initialMode);
+export function AuthForm() {
+  const { isLoading, signInWithGoogle, sendMagicLink } = useAuth();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const [isEmailSubmitting, setIsEmailSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleGoogleSignIn = async () => {
     setMessage(null);
-
-    if (!email.trim() || !password.trim()) {
-      setMessage("Email and password are required.");
-      return;
-    }
-
-    setIsSubmitting(true);
+    setErrorMessage(null);
+    setIsGoogleSubmitting(true);
 
     try {
-      if (mode === "sign-up") {
-        await signUpWithEmail(email.trim(), password);
-        setMessage("Sign-up successful. Check your email for confirmation if required.");
-      } else {
-        await signInWithEmail(email.trim(), password);
-        setMessage("Signed in.");
-      }
+      await signInWithGoogle();
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Auth request failed.";
-      setMessage(errorMessage);
-    } finally {
-      setIsSubmitting(false);
+      setErrorMessage(
+        error instanceof Error ? error.message : "Could not start Google sign-in.",
+      );
+      setIsGoogleSubmitting(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <section className="rounded-[2px] border border-zinc-800 bg-zinc-900/40 px-5 py-4 text-sm text-zinc-400">
-        Checking auth session...
-      </section>
-    );
-  }
+  const handleMagicLinkSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setMessage(null);
+    setErrorMessage(null);
 
-  if (user) {
-    return (
-      <section className="space-y-3 rounded-[2px] border border-zinc-800 bg-zinc-900/40 px-5 py-4">
-        <p className="text-sm text-zinc-300">
-          Signed in as <span className="font-medium text-zinc-100">{user.email}</span>
-        </p>
-        <button
-          type="button"
-          onClick={() => void signOut()}
-          className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700"
-        >
-          Sign out
-        </button>
-        <div className="text-sm text-zinc-400">
-          <Link href="/" className="text-zinc-300 transition hover:text-zinc-100">
-            Go to chat
-          </Link>
-        </div>
-      </section>
-    );
-  }
+    if (!email.trim()) {
+      setErrorMessage("Enter your email address to continue.");
+      return;
+    }
+
+    setIsEmailSubmitting(true);
+
+    try {
+      await sendMagicLink(email.trim());
+      setMessage("Magic link sent. Check your email to finish signing in.");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Could not send the magic link.",
+      );
+    } finally {
+      setIsEmailSubmitting(false);
+    }
+  };
 
   return (
-    <section className="space-y-4 rounded-[2px] border border-zinc-800 bg-zinc-900/40 px-5 py-4">
-      {showModeToggle && (
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setMode("sign-in")}
-            className={`rounded-[2px] px-2.5 py-1 text-sm ${
-              mode === "sign-in" ? "bg-zinc-700 text-zinc-100" : "bg-zinc-800 text-zinc-300"
-            }`}
-          >
-            Sign in
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("sign-up")}
-            className={`rounded-[2px] px-2.5 py-1 text-sm ${
-              mode === "sign-up" ? "bg-zinc-700 text-zinc-100" : "bg-zinc-800 text-zinc-300"
-            }`}
-          >
-            Sign up
-          </button>
-        </div>
-      )}
+    <section className="space-y-5">
+      <div className="space-y-1.5 text-center">
+        <h2 className="text-2xl font-semibold tracking-tight text-zinc-50">Welcome back</h2>
+        <p className="text-sm leading-6 text-zinc-400">
+          Sign in to unlock chats, saved profiles, and your roleplay history.
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="space-y-1">
-          <label htmlFor="auth-email" className="block text-xs text-zinc-400">
-            Email
-          </label>
+      <button
+        type="button"
+        onClick={() => void handleGoogleSignIn()}
+        disabled={isLoading || isGoogleSubmitting || isEmailSubmitting}
+        className="inline-flex w-full items-center justify-center gap-3 rounded-2xl border border-zinc-700 bg-white px-4 py-3 text-sm font-medium text-zinc-900 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        {isGoogleSubmitting ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+            <path
+              fill="currentColor"
+              d="M21.35 11.1H12v2.98h5.33c-.23 1.5-1.87 4.4-5.33 4.4-3.2 0-5.8-2.65-5.8-5.93s2.6-5.93 5.8-5.93c1.82 0 3.04.78 3.74 1.45l2.55-2.47C16.66 4.1 14.56 3 12 3 6.92 3 2.8 7.13 2.8 12.15S6.92 21.3 12 21.3c6.92 0 9.2-4.85 9.2-7.35 0-.5-.05-.86-.12-1.23Z"
+            />
+          </svg>
+        )}
+        <span>Continue with Google</span>
+      </button>
+
+      <div className="flex items-center gap-3 text-xs uppercase tracking-[0.18em] text-zinc-500">
+        <span className="h-px flex-1 bg-zinc-800" />
+        <span>Email</span>
+        <span className="h-px flex-1 bg-zinc-800" />
+      </div>
+
+      <form onSubmit={handleMagicLinkSubmit} className="space-y-3">
+        <label htmlFor="auth-email" className="block text-xs font-medium text-zinc-400">
+          Email address
+        </label>
+        <div className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-950/80 px-4 py-3">
+          <Mail className="h-4 w-4 shrink-0 text-zinc-500" />
           <input
             id="auth-email"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             autoComplete="email"
-            className="w-full rounded-[2px] border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-          />
-        </div>
-        <div className="space-y-1">
-          <label htmlFor="auth-password" className="block text-xs text-zinc-400">
-            Password
-          </label>
-          <input
-            id="auth-password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete={mode === "sign-up" ? "new-password" : "current-password"}
-            className="w-full rounded-[2px] border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
+            placeholder="you@example.com"
+            className="w-full bg-transparent text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
           />
         </div>
         <button
           type="submit"
-          disabled={isSubmitting}
-          className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={isLoading || isGoogleSubmitting || isEmailSubmitting}
+          className="inline-flex w-full items-center justify-center rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {isSubmitting ? "Submitting..." : mode === "sign-up" ? "Create account" : "Sign in"}
+          {isEmailSubmitting ? "Sending magic link..." : "Continue with email"}
         </button>
       </form>
 
-      {!showModeToggle && (
-        <p className="text-sm text-zinc-400">
-          {mode === "sign-up" ? (
-            <>
-              Already have an account?{" "}
-              <Link href="/login" className="text-zinc-300 transition hover:text-zinc-100">
-                Sign in
-              </Link>
-            </>
-          ) : (
-            <>
-              Need an account?{" "}
-              <Link href="/signup" className="text-zinc-300 transition hover:text-zinc-100">
-                Sign up
-              </Link>
-            </>
-          )}
+      {(message || errorMessage) && (
+        <p className={`text-sm leading-6 ${errorMessage ? "text-rose-300" : "text-zinc-300"}`}>
+          {errorMessage ?? message}
         </p>
       )}
-
-      {message && <p className="text-sm text-zinc-400">{message}</p>}
     </section>
   );
 }

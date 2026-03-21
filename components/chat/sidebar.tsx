@@ -1,7 +1,8 @@
-import { KeyboardEvent, useState } from "react";
+import { KeyboardEvent as ReactKeyboardEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Cog, PenSquare } from "lucide-react";
+import { ChevronUp, LogOut, PenSquare, Settings } from "lucide-react";
 
+import { useAuth } from "@/components/auth/auth-provider";
 import { ChatSession, SidebarView } from "@/types/chat";
 
 import { formatChatDate } from "@/lib/chat-utils";
@@ -37,8 +38,20 @@ export function Sidebar({
   onRenameChat,
   className,
 }: SidebarProps) {
+  const { user, signOut } = useAuth();
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const userEmail = user?.email?.trim() ?? "Signed in";
+  const userName =
+    typeof user?.user_metadata?.full_name === "string" && user.user_metadata.full_name.trim()
+      ? user.user_metadata.full_name.trim()
+      : userEmail.split("@")[0] ?? "Account";
+  const avatarUrl =
+    typeof user?.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : "";
+  const avatarFallback = userName.slice(0, 1).toUpperCase() || "A";
 
   const startRename = (chatId: string, currentTitle: string) => {
     setEditingChatId(chatId);
@@ -58,7 +71,7 @@ export function Sidebar({
   };
 
   const handleRenameKeyDown = (
-    event: KeyboardEvent<HTMLInputElement>,
+    event: ReactKeyboardEvent<HTMLInputElement>,
     chatId: string,
     fallbackTitle: string,
   ) => {
@@ -74,21 +87,59 @@ export function Sidebar({
     }
   };
 
+  useEffect(() => {
+    if (!isAccountMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!accountMenuRef.current?.contains(event.target as Node)) {
+        setIsAccountMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsAccountMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isAccountMenuOpen]);
+
+  const renderAvatar = (sizeClass: string) => {
+    if (avatarUrl) {
+      return (
+        <div
+          aria-hidden="true"
+          className={`${sizeClass} rounded-full border border-zinc-700 bg-zinc-800 bg-cover bg-center bg-no-repeat`}
+          style={{ backgroundImage: `url(${avatarUrl})` }}
+        />
+      );
+    }
+
+    return (
+      <div
+        aria-hidden="true"
+        className={`${sizeClass} flex items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-sm font-semibold text-zinc-100`}
+      >
+        {avatarFallback}
+      </div>
+    );
+  };
+
   return (
     <aside className={className ?? "flex h-full w-full max-w-72 flex-col px-2 py-2"}>
       <div className="px-3 pb-2 pt-1 md:hidden">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="truncate text-lg font-medium tracking-tight text-zinc-100">RP Chat MVP</h1>
-            <p className="truncate text-xs text-zinc-400">Your private roleplay hub</p>
-          </div>
-          <Link
-            href="/settings"
-            aria-label="Open settings"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-[2px] bg-zinc-800/80 text-zinc-300 transition hover:bg-zinc-700/80"
-          >
-            <Cog className="h-5 w-5" />
-          </Link>
+        <div className="min-w-0">
+          <h1 className="truncate text-lg font-medium tracking-tight text-zinc-100">RP Chat MVP</h1>
+          <p className="truncate text-xs text-zinc-400">Your private roleplay hub</p>
         </div>
       </div>
 
@@ -129,7 +180,7 @@ export function Sidebar({
         <h2 className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
           Session Chats
         </h2>
-        <div className="space-y-1 overflow-y-auto pr-1">
+        <div className="h-full space-y-1 overflow-y-auto pr-1">
           {chats.length === 0 && (
             <p className="rounded-[2px] bg-zinc-900/60 px-3 py-2 text-xs text-zinc-500">
               No chats yet.
@@ -184,6 +235,60 @@ export function Sidebar({
           })}
         </div>
       </section>
+
+      <div className="relative border-t border-zinc-900/90 px-3 pb-3 pt-3" ref={accountMenuRef}>
+        {isAccountMenuOpen && (
+          <div className="absolute inset-x-3 bottom-[calc(100%+0.75rem)] rounded-[22px] border border-zinc-800 bg-zinc-950/98 p-2 shadow-2xl shadow-black/40 backdrop-blur">
+            <div className="flex items-center gap-3 rounded-[18px] px-3 py-3">
+              {renderAvatar("h-11 w-11")}
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-zinc-100">{userName}</p>
+                <p className="truncate text-xs text-zinc-400">{userEmail}</p>
+              </div>
+            </div>
+
+            <div className="my-2 h-px bg-zinc-800" />
+
+            <Link
+              href="/settings"
+              onClick={() => setIsAccountMenuOpen(false)}
+              className="flex items-center gap-3 rounded-[16px] px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+            >
+              <Settings className="h-4 w-4" />
+              <span>Settings</span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsAccountMenuOpen(false);
+                void signOut();
+              }}
+              className="flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Log out</span>
+            </button>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setIsAccountMenuOpen((prev) => !prev)}
+          className="flex w-full items-center gap-3 rounded-[20px] border border-zinc-800 bg-zinc-900/80 px-3 py-3 text-left transition hover:border-zinc-700 hover:bg-zinc-900"
+        >
+          {renderAvatar("h-10 w-10")}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-zinc-100">{userName}</p>
+            <p className="truncate text-xs text-zinc-400">{userEmail}</p>
+          </div>
+          <ChevronUp
+            className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${
+              isAccountMenuOpen ? "rotate-180 text-zinc-300" : ""
+            }`}
+          />
+        </button>
+      </div>
     </aside>
   );
 }

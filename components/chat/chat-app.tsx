@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Cog, Menu, SlidersHorizontal } from "lucide-react";
+import { Menu, SlidersHorizontal } from "lucide-react";
 
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
 import { buildChatTitle, createId } from "@/lib/chat-utils";
@@ -1270,26 +1269,16 @@ export function ChatApp() {
             Your private roleplay hub
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {activeView === "chat" && activeChat && (
-            <button
-              type="button"
-              aria-label="Edit chat settings"
-              onClick={() => handleOpenChatSettings(activeChat.id)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-[2px] text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200 md:hidden"
-            >
-              <SlidersHorizontal className="h-5 w-5" />
-            </button>
-          )}
-          <Link
-            href="/settings"
-            aria-label="Open settings"
-            className="hidden h-9 items-center gap-2 rounded-[2px] px-3 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100 md:inline-flex"
+        {activeView === "chat" && activeChat && (
+          <button
+            type="button"
+            aria-label="Edit chat settings"
+            onClick={() => handleOpenChatSettings(activeChat.id)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-[2px] text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200 md:hidden"
           >
-            <Cog className="h-5 w-5" />
-            <span>Settings</span>
-          </Link>
-        </div>
+            <SlidersHorizontal className="h-5 w-5" />
+          </button>
+        )}
       </header>
 
       <div className="mt-2 flex min-h-0 min-w-0 flex-1 overflow-hidden sm:mt-4 sm:gap-4">

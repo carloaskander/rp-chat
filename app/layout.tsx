@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { AuthModalGate } from "@/components/auth/auth-modal-gate";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import "./globals.css";
 
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "RP Chat MVP",
-  description: "Roleplay chat MVP with local state",
+  description: "Roleplay chat MVP with Supabase-backed auth and persistence.",
 };
 
 export default function RootLayout({
@@ -29,7 +30,9 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} bg-zinc-950 text-zinc-100 antialiased`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <AuthModalGate>{children}</AuthModalGate>
+        </AuthProvider>
       </body>
     </html>
   );

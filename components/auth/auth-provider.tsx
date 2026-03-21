@@ -21,8 +21,8 @@ interface AuthContextValue {
   isLoading: boolean;
   authResolved: boolean;
   lastAuthEvent: AuthChangeEvent | null;
-  signInWithEmail: (email: string, password: string) => Promise<void>;
-  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  sendMagicLink: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -81,19 +81,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       authResolved,
       lastAuthEvent,
-      signInWithEmail: async (email: string, password: string) => {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+      signInWithGoogle: async () => {
+        const redirectTo =
+          typeof window === "undefined" ? undefined : window.location.href;
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo,
+          },
         });
         if (error) {
           throw error;
         }
       },
-      signUpWithEmail: async (email: string, password: string) => {
-        const { error } = await supabase.auth.signUp({
+      sendMagicLink: async (email: string) => {
+        const redirectTo =
+          typeof window === "undefined" ? undefined : window.location.href;
+        const { error } = await supabase.auth.signInWithOtp({
           email,
-          password,
+          options: {
+            emailRedirectTo: redirectTo,
+          },
         });
         if (error) {
           throw error;

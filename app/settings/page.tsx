@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { AuthForm } from "@/components/auth/auth-form";
 import { SettingsForm } from "@/components/settings/settings-form";
 
 export default function SettingsPage() {
@@ -15,7 +14,6 @@ export default function SettingsPage() {
           Back to Chat
         </Link>
       </header>
-      <AuthForm />
       <SettingsForm />
     </main>
   );
