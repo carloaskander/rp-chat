@@ -30,6 +30,17 @@ interface ChatMessagePaginationState {
   isLoading: boolean;
 }
 
+interface ChatAppCacheState {
+  userId: string | null;
+  chats: ChatSession[];
+  activeChatId: string | null;
+  apiProfiles: ApiProfile[];
+  chatMessagePagination: Record<string, ChatMessagePaginationState>;
+  loadedMessageChatIds: Record<string, true>;
+  hasLoadedProfiles: boolean;
+  hasLoadedChats: boolean;
+}
+
 interface ChatMessageRow {
   id: string;
   role: string;
@@ -44,6 +55,17 @@ interface MessageVersionRow {
   created_at: string;
   version_group_id: string;
 }
+
+const chatAppCache: ChatAppCacheState = {
+  userId: null,
+  chats: [],
+  activeChatId: null,
+  apiProfiles: [],
+  chatMessagePagination: {},
+  loadedMessageChatIds: {},
+  hasLoadedProfiles: false,
+  hasLoadedChats: false,
+};
 
 function buildVersionsByGroup(rows: MessageVersionRow[]): Map<string, MessageVersion[]> {
   const versionsByGroup = new Map<string, MessageVersion[]>();
@@ -121,9 +143,9 @@ function createSingleVersionMessage(message: {
 
 export function ChatApp() {
   const router = useRouter();
-  const { user, authResolved, lastAuthEvent } = useAuth();
-  const [chats, setChats] = useState<ChatSession[]>([]);
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const { user, authResolved, isPreviewMode, lastAuthEvent, requireAuth } = useAuth();
+  const [chats, setChats] = useState<ChatSession[]>(() => chatAppCache.chats);
+  const [activeChatId, setActiveChatId] = useState<string | null>(() => chatAppCache.activeChatId);
   const [instructionPresets, setInstructionPresets] = useLocalStorageState(
     STORAGE_KEYS.instructionPresets,
     DEFAULT_INSTRUCTION_PRESETS,
@@ -132,7 +154,7 @@ export function ChatApp() {
     STORAGE_KEYS.characterPresets,
     DEFAULT_CHARACTER_PRESETS,
   );
-  const [apiProfiles, setApiProfiles] = useState<ApiProfile[]>([]);
+  const [apiProfiles, setApiProfiles] = useState<ApiProfile[]>(() => chatAppCache.apiProfiles);
 
   const [activeView, setActiveView] = useState<SidebarView>("chat");
   const [chatSettingsChatId, setChatSettingsChatId] = useState<string | null>(null);
@@ -141,7 +163,10 @@ export function ChatApp() {
   const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
   const [chatMessagePagination, setChatMessagePagination] = useState<
     Record<string, ChatMessagePaginationState>
-  >({});
+  >(() => chatAppCache.chatMessagePagination);
+  const [loadedMessageChatIds, setLoadedMessageChatIds] = useState<Record<string, true>>(
+    () => chatAppCache.loadedMessageChatIds,
+  );
 
   useEffect(() => {
     setChats((prev) => {
@@ -188,16 +213,40 @@ export function ChatApp() {
     }
 
     if (lastAuthEvent === "SIGNED_OUT") {
+      chatAppCache.userId = null;
+      chatAppCache.chats = [];
+      chatAppCache.activeChatId = null;
+      chatAppCache.apiProfiles = [];
+      chatAppCache.chatMessagePagination = {};
+      chatAppCache.loadedMessageChatIds = {};
+      chatAppCache.hasLoadedProfiles = false;
+      chatAppCache.hasLoadedChats = false;
       setResolvedUserId(null);
       setChats([]);
       setActiveChatId(null);
+      setApiProfiles([]);
       setChatMessagePagination({});
+      setLoadedMessageChatIds({});
     }
-  }, [authResolved, lastAuthEvent]);
+  }, [authResolved, lastAuthEvent, setApiProfiles]);
+
+  useEffect(() => {
+    chatAppCache.userId = resolvedUserId;
+    chatAppCache.chats = chats;
+    chatAppCache.activeChatId = activeChatId;
+    chatAppCache.apiProfiles = apiProfiles;
+    chatAppCache.chatMessagePagination = chatMessagePagination;
+    chatAppCache.loadedMessageChatIds = loadedMessageChatIds;
+  }, [activeChatId, apiProfiles, chatMessagePagination, chats, loadedMessageChatIds, resolvedUserId]);
 
   useEffect(() => {
     if (!authResolved || !resolvedUserId) {
       setApiProfiles([]);
+      return;
+    }
+
+    if (chatAppCache.userId === resolvedUserId && chatAppCache.hasLoadedProfiles) {
+      setApiProfiles(chatAppCache.apiProfiles);
       return;
     }
 
@@ -228,6 +277,7 @@ export function ChatApp() {
       }));
 
       setApiProfiles(nextProfiles);
+      chatAppCache.hasLoadedProfiles = true;
     };
 
     void loadApiProfiles();
@@ -239,6 +289,14 @@ export function ChatApp() {
 
   useEffect(() => {
     if (!authResolved || !resolvedUserId) {
+      return;
+    }
+
+    if (chatAppCache.userId === resolvedUserId && chatAppCache.hasLoadedChats) {
+      setChats(chatAppCache.chats);
+      setChatMessagePagination(chatAppCache.chatMessagePagination);
+      setLoadedMessageChatIds(chatAppCache.loadedMessageChatIds);
+      setActiveChatId((prev) => prev ?? chatAppCache.activeChatId ?? chatAppCache.chats[0]?.id ?? null);
       return;
     }
 
@@ -285,6 +343,8 @@ export function ChatApp() {
         setChats([]);
         setActiveChatId(null);
         setChatMessagePagination({});
+        setLoadedMessageChatIds({});
+        chatAppCache.hasLoadedChats = true;
         return;
       }
       setChats(baseChats);
@@ -311,6 +371,7 @@ export function ChatApp() {
 
         return baseChats[0].id;
       });
+      chatAppCache.hasLoadedChats = true;
     };
 
     void loadChats();
@@ -375,6 +436,10 @@ export function ChatApp() {
             : chat,
         ),
       );
+      setLoadedMessageChatIds((prev) => ({
+        ...prev,
+        [chatId]: true,
+      }));
 
       setChatMessagePagination((prev) => ({
         ...prev,
@@ -402,8 +467,12 @@ export function ChatApp() {
       return;
     }
 
+    if (loadedMessageChatIds[activeChatId]) {
+      return;
+    }
+
     void loadLatestMessagesForChat(activeChatId);
-  }, [activeChatId, authResolved, loadLatestMessagesForChat, resolvedUserId]);
+  }, [activeChatId, authResolved, loadLatestMessagesForChat, loadedMessageChatIds, resolvedUserId]);
 
   useEffect(() => {
     if (!authResolved || !resolvedUserId) {
@@ -442,16 +511,22 @@ export function ChatApp() {
   const activeCharacterPreset = characterPresets.find(
     (preset) => preset.id === activeChat?.characterPresetId,
   );
-  const activeChatModelLabel = [
-    activeChatApiProfile
-      ? `${activeChatApiProfile.name} (${activeChatApiProfile.model || "Model not set"})`
-      : "No API profile selected",
-    activeInstructionPreset?.name ?? "No instruction preset",
-    activeCharacterPreset?.name ?? "No character preset",
-  ].join(" · ");
+  const activeChatModelLabel = isPreviewMode
+    ? "Preview mode · Sign in to start chatting and save your story"
+    : [
+        activeChatApiProfile
+          ? `${activeChatApiProfile.name} (${activeChatApiProfile.model || "Model not set"})`
+          : "No API profile selected",
+        activeInstructionPreset?.name ?? "No instruction preset",
+        activeCharacterPreset?.name ?? "No character preset",
+      ].join(" · ");
   const isActiveChatThinking = Boolean(activeChat && thinkingChatId === activeChat.id);
 
   const handleNewChat = async () => {
+    if (!requireAuth()) {
+      return;
+    }
+
     if (!user) {
       console.error("Cannot create chat: no authenticated user.");
       return;
@@ -620,6 +695,10 @@ export function ChatApp() {
   }, [activeChatId, chatMessagePagination]);
 
   const handleDeleteChat = async (chatId: string) => {
+    if (!requireAuth()) {
+      return;
+    }
+
     if (!user) {
       console.error("Cannot delete chat: no authenticated user.");
       return;
@@ -651,6 +730,10 @@ export function ChatApp() {
   };
 
   const handleRenameChat = async (chatId: string, title: string) => {
+    if (!requireAuth()) {
+      return;
+    }
+
     if (!user) {
       console.error("Cannot rename chat: no authenticated user.");
       return;
@@ -799,6 +882,10 @@ export function ChatApp() {
   }, [setChats]);
 
   const handleSlashCommand = async (commandId: string) => {
+    if (!requireAuth()) {
+      return;
+    }
+
     if (commandId !== "summarize" || !activeChatId) {
       return;
     }
@@ -836,6 +923,10 @@ export function ChatApp() {
   };
 
   const handleSendMessage = async (content: string) => {
+    if (!requireAuth()) {
+      return;
+    }
+
     if (!activeChatId) {
       return;
     }
@@ -1041,6 +1132,10 @@ export function ChatApp() {
     targetVersionId?: string;
     content?: string;
   }) => {
+    if (!requireAuth()) {
+      return;
+    }
+
     if (!activeChat) {
       return;
     }
@@ -1149,6 +1244,10 @@ export function ChatApp() {
       kind === "instruction" ? setInstructionPresets : setCharacterPresets;
 
     const createPreset = (name: string, content: string) => {
+      if (!requireAuth()) {
+        return;
+      }
+
       setPresets((prev) => [
         {
           id: createId(),
@@ -1160,6 +1259,10 @@ export function ChatApp() {
     };
 
     const updatePreset = (presetId: string, updates: Partial<Preset>) => {
+      if (!requireAuth()) {
+        return;
+      }
+
       setPresets((prev) =>
         prev.map((preset) =>
           preset.id === presetId ? { ...preset, ...updates } : preset,
@@ -1168,6 +1271,10 @@ export function ChatApp() {
     };
 
     const deletePreset = (presetId: string) => {
+      if (!requireAuth()) {
+        return;
+      }
+
       setPresets((prev) => prev.filter((preset) => preset.id !== presetId));
     };
 
@@ -1183,6 +1290,10 @@ export function ChatApp() {
   const characterPresetHandlers = createPresetHandlers("character");
 
   const handleOpenChatSettings = (chatId: string) => {
+    if (!requireAuth()) {
+      return;
+    }
+
     if (!hasApiProfiles) {
       router.push("/settings");
       return;
@@ -1195,6 +1306,10 @@ export function ChatApp() {
     characterPresetId: string | null;
     instructionPresetId: string | null;
   }) => {
+    if (!requireAuth()) {
+      return;
+    }
+
     if (!chatSettingsChatId) {
       return;
     }
@@ -1302,12 +1417,14 @@ export function ChatApp() {
           activeView={activeView}
           chats={sortedChats}
           activeChatId={activeChatId}
+          isPreviewMode={isPreviewMode}
           onNewChat={handleNewChat}
           onViewChange={handleViewChange}
           onSelectChat={handleSelectChat}
           onEditChatSettings={handleOpenChatSettings}
           onDeleteChat={handleDeleteChat}
           onRenameChat={handleRenameChat}
+          onRequireAuth={requireAuth}
           className={`fixed inset-y-0 left-0 z-40 flex w-[85vw] max-w-72 flex-col bg-zinc-950 px-2 py-2 shadow-2xl transition-transform md:static md:z-auto md:w-full md:max-w-72 md:translate-x-0 md:bg-transparent md:shadow-none ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
@@ -1319,7 +1436,8 @@ export function ChatApp() {
               chat={activeChat}
               modelLabel={activeChatModelLabel}
               inputDisabled={activeChatInputLocked}
-              setupRequired={shouldShowSetupRequired}
+              authRequired={isPreviewMode}
+              setupRequired={!isPreviewMode && shouldShowSetupRequired}
               hasApiProfiles={hasApiProfiles}
               isThinking={isActiveChatThinking}
               onSendMessage={handleSendMessage}
@@ -1338,12 +1456,15 @@ export function ChatApp() {
                   handleOpenChatSettings(activeChat.id);
                 }
               }}
+              onRequireAuth={requireAuth}
             />
           )}
 
           {activeView === "instructionPresets" && (
             <InstructionPresetSelector
               presets={instructionPresetHandlers.presets}
+              isReadOnly={isPreviewMode}
+              onRequireAuth={requireAuth}
               onCreatePreset={instructionPresetHandlers.createPreset}
               onUpdatePreset={instructionPresetHandlers.updatePreset}
               onDeletePreset={instructionPresetHandlers.deletePreset}
@@ -1353,6 +1474,8 @@ export function ChatApp() {
           {activeView === "characterPresets" && (
             <CharacterPresetSelector
               presets={characterPresetHandlers.presets}
+              isReadOnly={isPreviewMode}
+              onRequireAuth={requireAuth}
               onCreatePreset={characterPresetHandlers.createPreset}
               onUpdatePreset={characterPresetHandlers.updatePreset}
               onDeletePreset={characterPresetHandlers.deletePreset}

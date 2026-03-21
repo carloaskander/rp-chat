@@ -9,6 +9,8 @@ import { PresetEditorModal } from "./preset-editor-modal";
 
 interface InstructionPresetSelectorProps {
   presets: Preset[];
+  isReadOnly?: boolean;
+  onRequireAuth?: () => void;
   onCreatePreset: (name: string, content: string) => void;
   onUpdatePreset: (presetId: string, updates: Partial<Preset>) => void;
   onDeletePreset: (presetId: string) => void;
@@ -16,6 +18,8 @@ interface InstructionPresetSelectorProps {
 
 export function InstructionPresetSelector({
   presets,
+  isReadOnly = false,
+  onRequireAuth,
   onCreatePreset,
   onUpdatePreset,
   onDeletePreset,
@@ -25,24 +29,47 @@ export function InstructionPresetSelector({
 
   const activePreset = presets.find((preset) => preset.id === activePresetId) ?? null;
   const modalOpen = isCreating || activePreset !== null;
+  const handleBlockedAction = () => {
+    onRequireAuth?.();
+  };
 
   return (
     <section className="flex h-full min-h-0 flex-1 flex-col">
       <header className="px-8 pb-4 pt-7">
-        <h2 className="text-base font-medium tracking-tight text-zinc-100">Instruction Presets</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-base font-medium tracking-tight text-zinc-100">Instruction Presets</h2>
+          {isReadOnly && (
+            <span className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-zinc-500">
+              Preview mode
+            </span>
+          )}
+        </div>
+        {isReadOnly && (
+          <p className="mt-2 text-sm text-zinc-500">Sign in to create or edit instruction presets.</p>
+        )}
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-8 pb-8 pt-2">
         <div className="flex flex-wrap gap-3">
-          <PresetCard name="Add Preset" isAddCard onClick={() => setIsCreating(true)} />
+          <PresetCard
+            name="Add Preset"
+            isAddCard
+            disabled={isReadOnly}
+            onClick={isReadOnly ? handleBlockedAction : () => setIsCreating(true)}
+          />
           {presets.map((preset) => (
             <PresetCard
               key={preset.id}
               name={preset.name}
-              onClick={() => {
-                setIsCreating(false);
-                setActivePresetId(preset.id);
-              }}
+              disabled={isReadOnly}
+              onClick={
+                isReadOnly
+                  ? handleBlockedAction
+                  : () => {
+                      setIsCreating(false);
+                      setActivePresetId(preset.id);
+                    }
+              }
             />
           ))}
         </div>
@@ -50,7 +77,7 @@ export function InstructionPresetSelector({
 
       <PresetEditorModal
         key={isCreating ? "create-instruction" : activePreset?.id ?? "instruction-closed"}
-        open={modalOpen}
+        open={!isReadOnly && modalOpen}
         title={isCreating ? "New Instruction Preset" : "Edit Instruction Preset"}
         initialName={activePreset?.name ?? ""}
         initialContent={activePreset?.content ?? ""}

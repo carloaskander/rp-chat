@@ -21,12 +21,14 @@ interface SidebarProps {
   activeView: SidebarView;
   chats: ChatSession[];
   activeChatId: string | null;
+  isPreviewMode: boolean;
   onNewChat: () => void;
   onViewChange: (view: SidebarView) => void;
   onSelectChat: (chatId: string) => void;
   onEditChatSettings: (chatId: string) => void;
   onDeleteChat: (chatId: string) => void;
   onRenameChat: (chatId: string, title: string) => void;
+  onRequireAuth: () => void;
   className?: string;
 }
 
@@ -39,12 +41,14 @@ export function Sidebar({
   activeView,
   chats,
   activeChatId,
+  isPreviewMode,
   onNewChat,
   onViewChange,
   onSelectChat,
   onEditChatSettings,
   onDeleteChat,
   onRenameChat,
+  onRequireAuth,
   className,
 }: SidebarProps) {
   const { user, signOut } = useAuth();
@@ -155,11 +159,15 @@ export function Sidebar({
       <div className="p-2">
         <button
           type="button"
-          onClick={onNewChat}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-[2px] bg-zinc-800/80 px-3 py-3 text-base font-medium text-zinc-100 transition hover:bg-zinc-700/80 sm:py-2.5 sm:text-sm"
+          onClick={isPreviewMode ? onRequireAuth : onNewChat}
+          className={`inline-flex w-full items-center justify-center gap-2 rounded-[2px] px-3 py-3 text-base font-medium transition sm:py-2.5 sm:text-sm ${
+            isPreviewMode
+              ? "border border-dashed border-zinc-700 bg-zinc-900/40 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-900/70 hover:text-zinc-200"
+              : "bg-zinc-800/80 text-zinc-100 hover:bg-zinc-700/80"
+          }`}
         >
           <PenSquare className="h-5 w-5" />
-          New Chat
+          {isPreviewMode ? "Sign in to start" : "New Chat"}
         </button>
       </div>
 
@@ -246,7 +254,7 @@ export function Sidebar({
       </section>
 
       <div className="relative border-t border-zinc-900/90 px-3 pb-3 pt-3" ref={accountMenuRef}>
-        {isAccountMenuOpen && (
+        {!isPreviewMode && isAccountMenuOpen && (
           <div className="absolute inset-x-3 bottom-[calc(100%+0.75rem)] rounded-[22px] border border-zinc-800 bg-zinc-950/98 p-2 shadow-2xl shadow-black/40 backdrop-blur">
             <div className="flex items-center gap-3 rounded-[18px] px-3 py-3">
               {renderAvatar("h-11 w-11")}
@@ -319,17 +327,21 @@ export function Sidebar({
 
         <button
           type="button"
-          onClick={() => setIsAccountMenuOpen((prev) => !prev)}
+          onClick={isPreviewMode ? onRequireAuth : () => setIsAccountMenuOpen((prev) => !prev)}
           className="flex w-full items-center gap-3 rounded-[20px] border border-zinc-800 bg-zinc-900/80 px-3 py-3 text-left transition hover:border-zinc-700 hover:bg-zinc-900"
         >
           {renderAvatar("h-10 w-10")}
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-zinc-100">{userName}</p>
-            <p className="truncate text-xs text-zinc-400">{userEmail}</p>
+            <p className="truncate text-sm font-medium text-zinc-100">
+              {isPreviewMode ? "Preview mode" : userName}
+            </p>
+            <p className="truncate text-xs text-zinc-400">
+              {isPreviewMode ? "Sign in to save chats and unlock editing" : userEmail}
+            </p>
           </div>
           <ChevronUp
             className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${
-              isAccountMenuOpen ? "rotate-180 text-zinc-300" : ""
+              !isPreviewMode && isAccountMenuOpen ? "rotate-180 text-zinc-300" : ""
             }`}
           />
         </button>

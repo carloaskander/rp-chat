@@ -18,6 +18,7 @@ interface ChatPanelProps {
   chat: ChatSession | null;
   modelLabel: string;
   inputDisabled: boolean;
+  authRequired: boolean;
   setupRequired: boolean;
   hasApiProfiles: boolean;
   isThinking: boolean;
@@ -29,6 +30,7 @@ interface ChatPanelProps {
   onEditMessage: (messageId: string, content: string) => Promise<void>;
   onActivateMessageVersion: (targetVersionId: string) => Promise<void>;
   onOpenChatSettings: () => void;
+  onRequireAuth: () => void;
 }
 
 const SUMMARY_NOTICE_PREFIX = "[summary-notice]";
@@ -160,6 +162,7 @@ export function ChatPanel({
   chat,
   modelLabel,
   inputDisabled,
+  authRequired,
   setupRequired,
   hasApiProfiles,
   isThinking,
@@ -171,6 +174,7 @@ export function ChatPanel({
   onEditMessage,
   onActivateMessageVersion,
   onOpenChatSettings,
+  onRequireAuth,
 }: ChatPanelProps) {
   const TEXTAREA_MAX_HEIGHT = 168;
   const [inputValue, setInputValue] = useState("");
@@ -198,6 +202,7 @@ export function ChatPanel({
 
   const slashQuery = inputValue.startsWith("/") ? inputValue.slice(1).trim() : "";
   const isSlashMenuOpen =
+    !authRequired &&
     !inputDisabled &&
     !isThinking &&
     inputValue.startsWith("/") &&
@@ -356,6 +361,10 @@ export function ChatPanel({
 
   const submitCurrentInput = () => {
     const trimmed = inputValue.trim();
+    if (authRequired) {
+      onRequireAuth();
+      return false;
+    }
     if (inputDisabled) {
       onOpenChatSettings();
       return false;
@@ -661,6 +670,19 @@ export function ChatPanel({
               );
             })(),
           )
+        ) : authRequired ? (
+          <div className="mx-auto mt-16 max-w-md text-center">
+            <p className="text-sm text-zinc-400">
+              Explore the interface in preview mode. Sign in to start chatting and save your story.
+            </p>
+            <button
+              type="button"
+              onClick={onRequireAuth}
+              className="mt-4 rounded-full border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-800"
+            >
+              Sign in to continue
+            </button>
+          </div>
         ) : (
           <div className="mx-auto mt-16 max-w-md text-center text-sm text-zinc-500">
             Send a message to begin this chat.
@@ -723,23 +745,44 @@ export function ChatPanel({
               value={inputValue}
               onChange={(event) => handleInputChange(event.target.value)}
               onKeyDown={handleInputKeyDown}
+              onFocus={() => {
+                if (authRequired) {
+                  onRequireAuth();
+                }
+              }}
+              onClick={() => {
+                if (authRequired) {
+                  onRequireAuth();
+                }
+              }}
               rows={1}
+              readOnly={authRequired}
               disabled={inputDisabled || isThinking}
               placeholder={
-                inputDisabled
-                  ? "Select chat settings..."
-                  : isThinking
-                    ? "Thinking..."
-                    : "Type your message..."
+                authRequired
+                  ? "Sign in to start chatting..."
+                  : inputDisabled
+                    ? "Select chat settings..."
+                    : isThinking
+                      ? "Thinking..."
+                      : "Type your message..."
               }
-              className="max-h-42 min-h-[24px] w-full min-w-0 resize-none bg-transparent px-2 py-0 text-[15px] leading-5 text-zinc-100 outline-none placeholder:text-zinc-500 disabled:cursor-not-allowed disabled:text-zinc-500 sm:text-sm"
+              className={`max-h-42 min-h-[24px] w-full min-w-0 resize-none bg-transparent px-2 py-0 text-[15px] leading-5 outline-none placeholder:text-zinc-500 sm:text-sm ${
+                authRequired
+                  ? "cursor-pointer text-zinc-500"
+                  : "text-zinc-100 disabled:cursor-not-allowed disabled:text-zinc-500"
+              }`}
             />
           </div>
           <button
             type="submit"
-            disabled={inputDisabled || isThinking}
-            aria-label={isThinking ? "Thinking" : "Send message"}
-            className="self-end h-9 w-9 shrink-0 rounded-full border border-zinc-700 bg-zinc-800 text-zinc-100 transition hover:bg-zinc-700 disabled:opacity-60"
+            disabled={isThinking || inputDisabled}
+            aria-label={authRequired ? "Sign in to chat" : isThinking ? "Thinking" : "Send message"}
+            className={`self-end h-9 w-9 shrink-0 rounded-full border transition ${
+              authRequired
+                ? "border-zinc-800 bg-zinc-900 text-zinc-500 hover:border-zinc-700 hover:bg-zinc-800 hover:text-zinc-300"
+                : "border-zinc-700 bg-zinc-800 text-zinc-100 hover:bg-zinc-700 disabled:opacity-60"
+            }`}
           >
             <ArrowUp className="mx-auto h-4 w-4" />
           </button>
