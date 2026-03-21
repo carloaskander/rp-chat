@@ -9,6 +9,8 @@ import { ApiProfileEditorModal } from "./api-profile-editor-modal";
 
 interface ApiProfileListProps {
   profiles: ApiProfile[];
+  isPreviewMode?: boolean;
+  onRequireAuth?: () => void;
   onCreateProfile: (value: Omit<ApiProfile, "id">) => Promise<void>;
   onUpdateProfile: (id: string, value: Omit<ApiProfile, "id">) => Promise<void>;
   onDeleteProfile: (id: string) => Promise<void>;
@@ -24,6 +26,8 @@ const emptyDraft: Omit<ApiProfile, "id"> = {
 
 export function ApiProfileList({
   profiles,
+  isPreviewMode = false,
+  onRequireAuth,
   onCreateProfile,
   onUpdateProfile,
   onDeleteProfile,
@@ -39,7 +43,7 @@ export function ApiProfileList({
   >({});
 
   const editingProfile = profiles.find((profile) => profile.id === editingProfileId) ?? null;
-  const isModalOpen = isCreating || editingProfile !== null;
+  const isModalOpen = !isPreviewMode && (isCreating || editingProfile !== null);
 
   const handleDeleteProfile = async (profileId: string) => {
     setActionError(null);
@@ -70,18 +74,28 @@ export function ApiProfileList({
         <button
           type="button"
           onClick={() => {
+            if (isPreviewMode) {
+              onRequireAuth?.();
+              return;
+            }
             setIsCreating(true);
             setEditingProfileId(null);
           }}
-          className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-700"
+          className={`rounded-[2px] border px-3 py-1.5 text-sm font-medium transition ${
+            isPreviewMode
+              ? "border-dashed border-zinc-700 bg-zinc-900/40 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-900/70 hover:text-zinc-200"
+              : "border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+          }`}
         >
-          Add API Profile
+          {isPreviewMode ? "Sign in to add profile" : "Add API Profile"}
         </button>
       </div>
 
       {profiles.length === 0 ? (
-        <div className="rounded-[2px] bg-zinc-900/60 p-4 text-sm text-zinc-400">
-          No API profiles yet. Add your first profile to continue.
+        <div className="rounded-[18px] border border-zinc-800 bg-zinc-900/60 p-4 text-sm text-zinc-400">
+          {isPreviewMode
+            ? "This is where your saved provider profiles will appear. Sign in to add your first model setup."
+            : "No API profiles yet. Add your first profile to continue."}
         </div>
       ) : (
         <div className="space-y-2">
@@ -116,15 +130,25 @@ export function ApiProfileList({
                 <div className="ml-3 flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => void handleValidateProfile(profile)}
+                    onClick={() => {
+                      if (isPreviewMode) {
+                        onRequireAuth?.();
+                        return;
+                      }
+                      void handleValidateProfile(profile);
+                    }}
                     disabled={isValidating}
                     className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isValidating ? "Validating..." : "Validate"}
+                    {isPreviewMode ? "Sign in" : isValidating ? "Validating..." : "Validate"}
                   </button>
                   <button
                     type="button"
                     onClick={() => {
+                      if (isPreviewMode) {
+                        onRequireAuth?.();
+                        return;
+                      }
                       setIsCreating(false);
                       setEditingProfileId(profile.id);
                     }}
@@ -134,7 +158,13 @@ export function ApiProfileList({
                   </button>
                   <button
                     type="button"
-                    onClick={() => void handleDeleteProfile(profile.id)}
+                    onClick={() => {
+                      if (isPreviewMode) {
+                        onRequireAuth?.();
+                        return;
+                      }
+                      void handleDeleteProfile(profile.id);
+                    }}
                     disabled={deletingProfileId === profile.id}
                     className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
                   >

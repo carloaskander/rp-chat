@@ -15,7 +15,7 @@ interface SettingsFormProps {
 }
 
 export function SettingsForm({ initialTab }: SettingsFormProps) {
-  const { user, signOut } = useAuth();
+  const { user, isPreviewMode, requireAuth, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const [profiles, setProfiles] = useState<ApiProfile[]>([]);
 
@@ -210,19 +210,31 @@ export function SettingsForm({ initialTab }: SettingsFormProps) {
               <div className="min-w-0 flex-1">
                 <h2 className="text-base font-medium text-zinc-100">Account</h2>
                 <p className="mt-1 text-sm text-zinc-400">
-                  You are signed in and ready to use the app.
+                  {isPreviewMode
+                    ? "Explore the app in preview mode, then sign in when you're ready to save data and use models."
+                    : "You are signed in and ready to use the app."}
                 </p>
                 <div className="mt-4 rounded-[18px] border border-zinc-800 bg-zinc-900/70 px-4 py-3">
                   <p className="text-xs uppercase tracking-[0.12em] text-zinc-500">Email</p>
                   <p className="mt-1 truncate text-sm text-zinc-200">{user?.email ?? "Signed out"}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void signOut()}
-                  className="mt-4 inline-flex items-center rounded-[16px] border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-800"
-                >
-                  Log out
-                </button>
+                {isPreviewMode ? (
+                  <button
+                    type="button"
+                    onClick={requireAuth}
+                    className="mt-4 inline-flex items-center rounded-[16px] border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-800"
+                  >
+                    Sign in to unlock the app
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void signOut()}
+                    className="mt-4 inline-flex items-center rounded-[16px] border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-800"
+                  >
+                    Log out
+                  </button>
+                )}
               </div>
             </div>
           </section>
@@ -241,6 +253,8 @@ export function SettingsForm({ initialTab }: SettingsFormProps) {
             </div>
             <ApiProfileList
               profiles={user ? profiles : []}
+              isPreviewMode={isPreviewMode}
+              onRequireAuth={requireAuth}
               onCreateProfile={handleCreateProfile}
               onUpdateProfile={handleUpdateProfile}
               onDeleteProfile={handleDeleteProfile}

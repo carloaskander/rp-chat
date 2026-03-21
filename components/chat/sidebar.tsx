@@ -1,5 +1,6 @@
 import { KeyboardEvent as ReactKeyboardEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ChevronUp,
   CircleUserRound,
@@ -51,6 +52,7 @@ export function Sidebar({
   onRequireAuth,
   className,
 }: SidebarProps) {
+  const router = useRouter();
   const { user, signOut } = useAuth();
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
@@ -327,7 +329,11 @@ export function Sidebar({
 
         <button
           type="button"
-          onClick={isPreviewMode ? onRequireAuth : () => setIsAccountMenuOpen((prev) => !prev)}
+          onClick={
+            isPreviewMode
+              ? () => router.push("/settings?section=account")
+              : () => setIsAccountMenuOpen((prev) => !prev)
+          }
           className="flex w-full items-center gap-3 rounded-[20px] border border-zinc-800 bg-zinc-900/80 px-3 py-3 text-left transition hover:border-zinc-700 hover:bg-zinc-900"
         >
           {renderAvatar("h-10 w-10")}
