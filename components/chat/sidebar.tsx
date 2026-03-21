@@ -127,11 +127,22 @@ export function Sidebar({
   }, [isAccountMenuOpen]);
 
   const renderAvatar = (sizeClass: string) => {
+    if (isPreviewMode) {
+      return (
+        <div
+          aria-hidden="true"
+          className={`${sizeClass} shrink-0 flex items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-zinc-400`}
+        >
+          <CircleUserRound className="h-4.5 w-4.5" />
+        </div>
+      );
+    }
+
     if (avatarUrl) {
       return (
         <div
           aria-hidden="true"
-          className={`${sizeClass} rounded-full border border-zinc-700 bg-zinc-800 bg-cover bg-center bg-no-repeat`}
+          className={`${sizeClass} shrink-0 rounded-full border border-zinc-700 bg-zinc-800 bg-cover bg-center bg-no-repeat`}
           style={{ backgroundImage: `url(${avatarUrl})` }}
         />
       );
@@ -140,7 +151,7 @@ export function Sidebar({
     return (
       <div
         aria-hidden="true"
-        className={`${sizeClass} flex items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-sm font-semibold text-zinc-100`}
+        className={`${sizeClass} shrink-0 flex items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-sm font-semibold text-zinc-100`}
       >
         {avatarFallback}
       </div>
@@ -255,7 +266,7 @@ export function Sidebar({
 
       <div className="relative border-t border-zinc-900/90 px-3 pb-3 pt-3" ref={accountMenuRef}>
         {isAccountMenuOpen && (
-          <div className="absolute inset-x-3 bottom-[calc(100%+0.75rem)] rounded-[22px] border border-zinc-800 bg-zinc-950/98 p-2 shadow-2xl shadow-black/40 backdrop-blur">
+          <div className="absolute inset-x-3 bottom-[calc(100%+0.35rem)] rounded-[22px] border border-zinc-800 bg-zinc-950/98 p-2 shadow-2xl shadow-black/40 backdrop-blur">
             <div className="flex items-center gap-3 rounded-[18px] px-3 py-3">
               {renderAvatar("h-11 w-11")}
               <div className="min-w-0">
