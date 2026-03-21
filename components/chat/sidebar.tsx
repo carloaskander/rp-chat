@@ -254,13 +254,17 @@ export function Sidebar({
       </section>
 
       <div className="relative border-t border-zinc-900/90 px-3 pb-3 pt-3" ref={accountMenuRef}>
-        {!isPreviewMode && isAccountMenuOpen && (
+        {isAccountMenuOpen && (
           <div className="absolute inset-x-3 bottom-[calc(100%+0.75rem)] rounded-[22px] border border-zinc-800 bg-zinc-950/98 p-2 shadow-2xl shadow-black/40 backdrop-blur">
             <div className="flex items-center gap-3 rounded-[18px] px-3 py-3">
               {renderAvatar("h-11 w-11")}
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-zinc-100">{userName}</p>
-                <p className="truncate text-xs text-zinc-400">{userEmail}</p>
+                <p className="truncate text-sm font-medium text-zinc-100">
+                  {isPreviewMode ? "Preview mode" : userName}
+                </p>
+                <p className="truncate text-xs text-zinc-400">
+                  {isPreviewMode ? "Explore the app and open settings sections" : userEmail}
+                </p>
               </div>
             </div>
 
@@ -311,23 +315,37 @@ export function Sidebar({
               <span>All Settings</span>
             </Link>
 
-            <button
-              type="button"
-              onClick={() => {
-                setIsAccountMenuOpen(false);
-                void signOut();
-              }}
-              className="flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Log out</span>
-            </button>
+            {isPreviewMode ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAccountMenuOpen(false);
+                  onRequireAuth();
+                }}
+                className="flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+              >
+                <CircleUserRound className="h-4 w-4" />
+                <span>Sign in</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAccountMenuOpen(false);
+                  void signOut();
+                }}
+                className="flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Log out</span>
+              </button>
+            )}
           </div>
         )}
 
         <button
           type="button"
-          onClick={isPreviewMode ? onRequireAuth : () => setIsAccountMenuOpen((prev) => !prev)}
+          onClick={() => setIsAccountMenuOpen((prev) => !prev)}
           className="flex w-full items-center gap-3 rounded-[20px] border border-zinc-800 bg-zinc-900/80 px-3 py-3 text-left transition hover:border-zinc-700 hover:bg-zinc-900"
         >
           {renderAvatar("h-10 w-10")}
@@ -341,7 +359,7 @@ export function Sidebar({
           </div>
           <ChevronUp
             className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${
-              !isPreviewMode && isAccountMenuOpen ? "rotate-180 text-zinc-300" : ""
+              isAccountMenuOpen ? "rotate-180 text-zinc-300" : ""
             }`}
           />
         </button>
