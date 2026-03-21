@@ -1,10 +1,23 @@
 import Link from "next/link";
 
 import { SettingsForm } from "@/components/settings/settings-form";
+import { SettingsTab } from "@/types/settings";
 
-export default function SettingsPage() {
+const validSections = new Set<SettingsTab>(["account", "api", "appearance", "about"]);
+
+interface SettingsPageProps {
+  searchParams?: Promise<{ section?: string }>;
+}
+
+export default async function SettingsPage({ searchParams }: SettingsPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const requestedSection = resolvedSearchParams?.section;
+  const initialTab: SettingsTab = validSections.has(requestedSection as SettingsTab)
+    ? (requestedSection as SettingsTab)
+    : "account";
+
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-5 px-4 py-6 sm:px-6">
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-5 px-4 py-6 sm:px-6">
       <header className="flex items-center justify-between px-5 py-4">
         <h1 className="text-lg font-medium tracking-tight text-zinc-100">Settings</h1>
         <Link
@@ -14,7 +27,7 @@ export default function SettingsPage() {
           Back to Chat
         </Link>
       </header>
-      <SettingsForm />
+      <SettingsForm key={initialTab} initialTab={initialTab} />
     </main>
   );
 }

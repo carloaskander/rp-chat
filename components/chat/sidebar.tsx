@@ -1,6 +1,15 @@
 import { KeyboardEvent as ReactKeyboardEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronUp, LogOut, PenSquare, Settings } from "lucide-react";
+import {
+  ChevronUp,
+  CircleUserRound,
+  Info,
+  LogOut,
+  Palette,
+  PenSquare,
+  Settings,
+  Settings2,
+} from "lucide-react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { ChatSession, SidebarView } from "@/types/chat";
@@ -250,12 +259,48 @@ export function Sidebar({
             <div className="my-2 h-px bg-zinc-800" />
 
             <Link
+              href="/settings?section=account"
+              onClick={() => setIsAccountMenuOpen(false)}
+              className="flex items-center gap-3 rounded-[16px] px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+            >
+              <CircleUserRound className="h-4 w-4" />
+              <span>Account</span>
+            </Link>
+
+            <Link
+              href="/settings?section=api"
+              onClick={() => setIsAccountMenuOpen(false)}
+              className="flex items-center gap-3 rounded-[16px] px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+            >
+              <Settings2 className="h-4 w-4" />
+              <span>API Profiles</span>
+            </Link>
+
+            <Link
+              href="/settings?section=appearance"
+              onClick={() => setIsAccountMenuOpen(false)}
+              className="flex items-center gap-3 rounded-[16px] px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+            >
+              <Palette className="h-4 w-4" />
+              <span>Appearance</span>
+            </Link>
+
+            <Link
+              href="/settings?section=about"
+              onClick={() => setIsAccountMenuOpen(false)}
+              className="flex items-center gap-3 rounded-[16px] px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+            >
+              <Info className="h-4 w-4" />
+              <span>About</span>
+            </Link>
+
+            <Link
               href="/settings"
               onClick={() => setIsAccountMenuOpen(false)}
               className="flex items-center gap-3 rounded-[16px] px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
             >
               <Settings className="h-4 w-4" />
-              <span>Settings</span>
+              <span>All Settings</span>
             </Link>
 
             <button

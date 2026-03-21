@@ -6,4 +6,4 @@ export interface ApiProfile {
   apiKey: string;
 }
 
-export type SettingsTab = "api" | "appearance" | "advanced" | "about";
+export type SettingsTab = "account" | "api" | "appearance" | "about";
