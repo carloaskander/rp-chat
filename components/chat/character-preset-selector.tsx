@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { PreviewModeBadge } from "@/components/auth/preview-mode-ui";
 import { Preset } from "@/types/chat";
 
 import { PresetCard } from "./preset-card";
@@ -38,15 +39,8 @@ export function CharacterPresetSelector({
       <header className="px-8 pb-4 pt-7">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-base font-medium tracking-tight text-zinc-100">Character Presets</h2>
-          {isReadOnly && (
-            <span className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-zinc-500">
-              Preview mode
-            </span>
-          )}
+          {isReadOnly && <PreviewModeBadge />}
         </div>
-        {isReadOnly && (
-          <p className="mt-2 text-sm text-zinc-500">Sign in to create or edit character presets.</p>
-        )}
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-8 pb-8 pt-2">

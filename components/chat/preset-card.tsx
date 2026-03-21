@@ -30,7 +30,6 @@ export function PresetCard({ name, onClick, isAddCard = false, disabled = false 
         {isAddCard ? "+" : "AI"}
       </div>
       <span className="line-clamp-2 text-xs font-medium leading-4">{name}</span>
-      {disabled && <span className="mt-2 text-[10px] uppercase tracking-[0.14em]">Sign in required</span>}
     </button>
   );
 }

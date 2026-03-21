@@ -87,14 +87,14 @@ export function ApiProfileList({
               : "border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
           }`}
         >
-          {isPreviewMode ? "Sign in to add profile" : "Add API Profile"}
+          Add API Profile
         </button>
       </div>
 
       {profiles.length === 0 ? (
         <div className="rounded-[18px] border border-zinc-800 bg-zinc-900/60 p-4 text-sm text-zinc-400">
           {isPreviewMode
-            ? "This is where your saved provider profiles will appear. Sign in to add your first model setup."
+            ? "Your saved provider profiles will appear here once you sign in."
             : "No API profiles yet. Add your first profile to continue."}
         </div>
       ) : (
@@ -140,7 +140,7 @@ export function ApiProfileList({
                     disabled={isValidating}
                     className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isPreviewMode ? "Sign in" : isValidating ? "Validating..." : "Validate"}
+                    {isValidating ? "Validating..." : "Validate"}
                   </button>
                   <button
                     type="button"

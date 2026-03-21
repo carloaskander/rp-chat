@@ -671,17 +671,8 @@ export function ChatPanel({
             })(),
           )
         ) : authRequired ? (
-          <div className="mx-auto mt-16 max-w-md text-center">
-            <p className="text-sm text-zinc-400">
-              Explore the interface in preview mode. Sign in to start chatting and save your story.
-            </p>
-            <button
-              type="button"
-              onClick={onRequireAuth}
-              className="mt-4 rounded-full border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-800"
-            >
-              Sign in to continue
-            </button>
+          <div className="mx-auto mt-16 max-w-md text-center text-sm text-zinc-500">
+            Explore the interface in preview mode. Open the account area when you are ready to sign in.
           </div>
         ) : (
           <div className="mx-auto mt-16 max-w-md text-center text-sm text-zinc-500">
@@ -760,7 +751,7 @@ export function ChatPanel({
               disabled={inputDisabled || isThinking}
               placeholder={
                 authRequired
-                  ? "Sign in to start chatting..."
+                  ? "Preview mode..."
                   : inputDisabled
                     ? "Select chat settings..."
                     : isThinking

@@ -169,7 +169,7 @@ export function Sidebar({
           }`}
         >
           <PenSquare className="h-5 w-5" />
-          {isPreviewMode ? "Sign in to start" : "New Chat"}
+          New Chat
         </button>
       </div>
 
@@ -342,7 +342,7 @@ export function Sidebar({
               {isPreviewMode ? "Preview mode" : userName}
             </p>
             <p className="truncate text-xs text-zinc-400">
-              {isPreviewMode ? "Sign in to save chats and unlock editing" : userEmail}
+              {isPreviewMode ? "Explore the app before signing in" : userEmail}
             </p>
           </div>
           <ChevronUp
