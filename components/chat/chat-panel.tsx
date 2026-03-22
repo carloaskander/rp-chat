@@ -10,7 +10,6 @@ import {
   ChevronRight,
   Cpu,
   Pencil,
-  SlidersHorizontal,
   UserRound,
   X,
 } from "lucide-react";
@@ -35,7 +34,9 @@ interface ChatPanelProps {
   onLoadOlderMessages: () => Promise<void>;
   onEditMessage: (messageId: string, content: string) => Promise<void>;
   onActivateMessageVersion: (targetVersionId: string) => Promise<void>;
-  onOpenChatSettings: () => void;
+  onOpenApiProfileSelector: () => void;
+  onOpenCharacterPresetSelector: () => void;
+  onOpenInstructionPresetSelector: () => void;
   onRequireAuth: () => void;
 }
 
@@ -182,7 +183,9 @@ export function ChatPanel({
   onLoadOlderMessages,
   onEditMessage,
   onActivateMessageVersion,
-  onOpenChatSettings,
+  onOpenApiProfileSelector,
+  onOpenCharacterPresetSelector,
+  onOpenInstructionPresetSelector,
   onRequireAuth,
 }: ChatPanelProps) {
   const TEXTAREA_MAX_HEIGHT = 168;
@@ -375,7 +378,7 @@ export function ChatPanel({
       return false;
     }
     if (inputDisabled) {
-      onOpenChatSettings();
+      onOpenApiProfileSelector();
       return false;
     }
     if (isThinking) {
@@ -470,22 +473,9 @@ export function ChatPanel({
     <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
       <header className="hidden items-start gap-3 px-8 pb-4 pt-7 md:flex">
         <div className="min-w-0">
-          <div className="flex items-center gap-3">
-            <p className="truncate text-base font-medium tracking-tight text-zinc-100">
-              {chat?.title ?? "No Active Chat"}
-            </p>
-            {chat && (
-              <button
-                type="button"
-                aria-label="Edit chat settings"
-                onClick={onOpenChatSettings}
-                className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[2px] px-3 text-sm font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200"
-              >
-                <SlidersHorizontal className="h-5 w-5" />
-                <span>Chat settings</span>
-              </button>
-            )}
-          </div>
+          <p className="truncate text-base font-medium tracking-tight text-zinc-100">
+            {chat?.title ?? "No Active Chat"}
+          </p>
           <p className="mt-1 truncate text-xs text-zinc-500">{modelLabel}</p>
         </div>
       </header>
@@ -509,10 +499,10 @@ export function ChatPanel({
             </p>
             <button
               type="button"
-              onClick={onOpenChatSettings}
+              onClick={onOpenApiProfileSelector}
               className="mt-4 rounded-[2px] border border-zinc-700 bg-zinc-800 px-4 py-2 text-[15px] font-medium text-zinc-200 hover:bg-zinc-700 sm:px-3 sm:py-1.5 sm:text-sm"
             >
-              {hasApiProfiles ? "Open Chat Settings" : "Go to Settings"}
+              {hasApiProfiles ? "Choose API Profile" : "Go to Settings"}
             </button>
           </div>
         ) : chat?.messages.length ? (
@@ -775,7 +765,7 @@ export function ChatPanel({
                   authRequired
                     ? "Preview mode..."
                     : inputDisabled
-                      ? "Select chat settings..."
+                      ? "Choose an API profile..."
                       : isThinking
                         ? "Thinking..."
                         : "Type your message..."
@@ -804,7 +794,7 @@ export function ChatPanel({
           <div className="mt-2 flex flex-wrap items-center gap-2 px-1">
             <button
               type="button"
-              onClick={onOpenChatSettings}
+              onClick={onOpenApiProfileSelector}
               disabled={!chat}
               className={controlButtonClassName}
             >
@@ -814,7 +804,7 @@ export function ChatPanel({
 
             <button
               type="button"
-              onClick={onOpenChatSettings}
+              onClick={onOpenCharacterPresetSelector}
               disabled={!chat}
               className={controlButtonClassName}
             >
@@ -824,7 +814,7 @@ export function ChatPanel({
 
             <button
               type="button"
-              onClick={onOpenChatSettings}
+              onClick={onOpenInstructionPresetSelector}
               disabled={!chat}
               className={controlButtonClassName}
             >

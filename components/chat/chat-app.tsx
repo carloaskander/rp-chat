@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Menu, SlidersHorizontal } from "lucide-react";
+import { Menu } from "lucide-react";
 
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
 import { buildChatTitle, createId } from "@/lib/chat-utils";
@@ -17,7 +17,7 @@ import { ApiProfile } from "@/types/settings";
 import { useAuth } from "@/components/auth/auth-provider";
 
 import { CharacterPresetSelector } from "./character-preset-selector";
-import { ChatSettingsModal } from "./chat-settings-modal";
+import { ChatOptionSelectorModal } from "./chat-option-selector-modal";
 import { ChatPanel } from "./chat-panel";
 import { InstructionPresetSelector } from "./instruction-preset-selector";
 import { Sidebar } from "./sidebar";
@@ -39,6 +39,13 @@ interface ChatAppCacheState {
   loadedMessageChatIds: Record<string, true>;
   hasLoadedProfiles: boolean;
   hasLoadedChats: boolean;
+}
+
+type ChatOptionSelectorKind = "apiProfile" | "characterPreset" | "instructionPreset";
+
+interface ChatOptionSelectorState {
+  chatId: string;
+  kind: ChatOptionSelectorKind;
 }
 
 interface ChatMessageRow {
@@ -157,7 +164,7 @@ export function ChatApp() {
   const [apiProfiles, setApiProfiles] = useState<ApiProfile[]>(() => chatAppCache.apiProfiles);
 
   const [activeView, setActiveView] = useState<SidebarView>("chat");
-  const [chatSettingsChatId, setChatSettingsChatId] = useState<string | null>(null);
+  const [chatOptionSelector, setChatOptionSelector] = useState<ChatOptionSelectorState | null>(null);
   const [thinkingChatId, setThinkingChatId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
@@ -227,6 +234,7 @@ export function ChatApp() {
       setApiProfiles([]);
       setChatMessagePagination({});
       setLoadedMessageChatIds({});
+      setChatOptionSelector(null);
     }
   }, [authResolved, lastAuthEvent, setApiProfiles]);
 
@@ -500,7 +508,7 @@ export function ChatApp() {
   const activeChatApiProfile = apiProfiles.find(
     (profile) => profile.id === activeChat?.apiProfileId,
   );
-  const editingChat = chats.find((chat) => chat.id === chatSettingsChatId) ?? null;
+  const selectorChat = chats.find((chat) => chat.id === chatOptionSelector?.chatId) ?? null;
   const activeChatInputLocked = Boolean(activeChat && !activeChat.apiProfileId);
   const shouldShowSetupRequired =
     activeChatInputLocked && (activeChat?.messages.length ?? 0) === 0;
@@ -721,11 +729,11 @@ export function ChatApp() {
       setActiveChatId(null);
     }
 
-    if (chatSettingsChatId === chatId) {
-      setChatSettingsChatId(null);
-    }
     if (thinkingChatId === chatId) {
       setThinkingChatId(null);
+    }
+    if (chatOptionSelector?.chatId === chatId) {
+      setChatOptionSelector(null);
     }
   };
 
@@ -1289,70 +1297,95 @@ export function ChatApp() {
   const instructionPresetHandlers = createPresetHandlers("instruction");
   const characterPresetHandlers = createPresetHandlers("character");
 
-  const handleOpenChatSettings = (chatId: string) => {
+  const persistChatOptionSelection = async (
+    chatId: string,
+    values: {
+      apiProfileId?: string | null;
+      characterPresetId?: string | null;
+      instructionPresetId?: string | null;
+    },
+  ) => {
+    if (!requireAuth()) {
+      return;
+    }
+
+    const updatePayload: {
+      api_profile_id?: string | null;
+      character_preset_id?: string | null;
+      instruction_preset_id?: string | null;
+      updated_at: string;
+    } = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (Object.prototype.hasOwnProperty.call(values, "apiProfileId")) {
+      updatePayload.api_profile_id = values.apiProfileId ?? null;
+    }
+    if (Object.prototype.hasOwnProperty.call(values, "characterPresetId")) {
+      updatePayload.character_preset_id = values.characterPresetId ?? null;
+    }
+    if (Object.prototype.hasOwnProperty.call(values, "instructionPresetId")) {
+      updatePayload.instruction_preset_id = values.instructionPresetId ?? null;
+    }
+
+    const { data, error } = await supabase
+      .from("chats")
+      .update(updatePayload)
+      .eq("id", chatId)
+      .select("api_profile_id, character_preset_id, instruction_preset_id, updated_at")
+      .single();
+
+    if (error || !data) {
+      console.error("Failed to persist chat option.", error);
+      return;
+    }
+
+    const updatedAt = Date.parse(data.updated_at);
+    const fallbackUpdatedAt = Date.now();
+
+    setChats((prev) =>
+      prev.map((chat) =>
+        chat.id === chatId
+          ? {
+              ...chat,
+              apiProfileId: data.api_profile_id,
+              characterPresetId: data.character_preset_id,
+              instructionPresetId: data.instruction_preset_id,
+              settingsConfigured: Boolean(data.api_profile_id),
+              updatedAt: Number.isNaN(updatedAt) ? fallbackUpdatedAt : updatedAt,
+            }
+          : chat,
+      ),
+    );
+  };
+
+  const handleOpenApiProfileSelector = (chatId: string) => {
     if (!requireAuth()) {
       return;
     }
 
     if (!hasApiProfiles) {
-      router.push("/settings");
+      router.push("/settings?section=api");
       return;
     }
-    setChatSettingsChatId(chatId);
+
+    setChatOptionSelector({ chatId, kind: "apiProfile" });
   };
 
-  const handleSaveChatSettings = (values: {
-    apiProfileId: string | null;
-    characterPresetId: string | null;
-    instructionPresetId: string | null;
-  }) => {
+  const handleOpenCharacterPresetSelector = (chatId: string) => {
     if (!requireAuth()) {
       return;
     }
 
-    if (!chatSettingsChatId) {
+    setChatOptionSelector({ chatId, kind: "characterPreset" });
+  };
+
+  const handleOpenInstructionPresetSelector = (chatId: string) => {
+    if (!requireAuth()) {
       return;
     }
-    const targetChatId = chatSettingsChatId;
 
-    void (async () => {
-      const { data, error } = await supabase
-        .from("chats")
-        .update({
-          api_profile_id: values.apiProfileId,
-          character_preset_id: values.characterPresetId,
-          instruction_preset_id: values.instructionPresetId,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", targetChatId)
-        .select("api_profile_id, character_preset_id, instruction_preset_id, updated_at")
-        .single();
-
-      if (error || !data) {
-        console.error("Failed to persist chat settings.", error);
-        return;
-      }
-
-      const updatedAt = Date.parse(data.updated_at);
-      const fallbackUpdatedAt = Date.now();
-
-      setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === targetChatId
-            ? {
-                ...chat,
-                ...values,
-                apiProfileId: data.api_profile_id,
-                characterPresetId: data.character_preset_id,
-                instructionPresetId: data.instruction_preset_id,
-                settingsConfigured: Boolean(data.api_profile_id),
-                updatedAt: Number.isNaN(updatedAt) ? fallbackUpdatedAt : updatedAt,
-              }
-            : chat,
-        ),
-      );
-      setChatSettingsChatId(null);
-    })();
+    setChatOptionSelector({ chatId, kind: "instructionPreset" });
   };
 
   return (
@@ -1384,16 +1417,6 @@ export function ChatApp() {
             Your private roleplay hub
           </p>
         </div>
-        {activeView === "chat" && activeChat && (
-          <button
-            type="button"
-            aria-label="Edit chat settings"
-            onClick={() => handleOpenChatSettings(activeChat.id)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-[2px] text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200 md:hidden"
-          >
-            <SlidersHorizontal className="h-5 w-5" />
-          </button>
-        )}
       </header>
 
       <div className="mt-2 flex min-h-0 min-w-0 flex-1 overflow-hidden sm:mt-4 sm:gap-4">
@@ -1421,7 +1444,6 @@ export function ChatApp() {
           onNewChat={handleNewChat}
           onViewChange={handleViewChange}
           onSelectChat={handleSelectChat}
-          onEditChatSettings={handleOpenChatSettings}
           onDeleteChat={handleDeleteChat}
           onRenameChat={handleRenameChat}
           onRequireAuth={requireAuth}
@@ -1454,9 +1476,19 @@ export function ChatApp() {
               onLoadOlderMessages={handleLoadOlderMessages}
               onEditMessage={handleEditMessage}
               onActivateMessageVersion={handleActivateMessageVersion}
-              onOpenChatSettings={() => {
+              onOpenApiProfileSelector={() => {
                 if (activeChat) {
-                  handleOpenChatSettings(activeChat.id);
+                  handleOpenApiProfileSelector(activeChat.id);
+                }
+              }}
+              onOpenCharacterPresetSelector={() => {
+                if (activeChat) {
+                  handleOpenCharacterPresetSelector(activeChat.id);
+                }
+              }}
+              onOpenInstructionPresetSelector={() => {
+                if (activeChat) {
+                  handleOpenInstructionPresetSelector(activeChat.id);
                 }
               }}
               onRequireAuth={requireAuth}
@@ -1487,21 +1519,63 @@ export function ChatApp() {
 
         </section>
       </div>
-
-      <ChatSettingsModal
-        key={editingChat?.id ?? "chat-settings"}
-        open={editingChat !== null}
-        title={editingChat?.apiProfileId ? "Edit Chat Settings" : "Set Up Chat"}
-        initialValues={{
-          apiProfileId: editingChat?.apiProfileId ?? null,
-          characterPresetId: editingChat?.characterPresetId ?? null,
-          instructionPresetId: editingChat?.instructionPresetId ?? null,
+      <ChatOptionSelectorModal
+        open={chatOptionSelector?.kind === "apiProfile" && selectorChat !== null}
+        title="API Profile"
+        description="Choose which model profile this chat should use."
+        selectedId={selectorChat?.apiProfileId ?? null}
+        options={apiProfiles.map((profile) => ({
+          id: profile.id,
+          label: profile.name,
+          description: [profile.provider, profile.model].filter(Boolean).join(" · "),
+        }))}
+        emptyStateTitle="No API profiles yet."
+        emptyStateDescription="Create an API profile in settings to start chatting with this conversation."
+        settingsHref="/settings?section=api"
+        onClose={() => setChatOptionSelector(null)}
+        onSelect={(value) => {
+          if (selectorChat) {
+            void persistChatOptionSelection(selectorChat.id, { apiProfileId: value });
+          }
         }}
-        apiProfiles={apiProfiles}
-        characterPresets={characterPresets}
-        instructionPresets={instructionPresets}
-        onSave={handleSaveChatSettings}
-        onCancel={() => setChatSettingsChatId(null)}
+      />
+
+      <ChatOptionSelectorModal
+        open={chatOptionSelector?.kind === "characterPreset" && selectorChat !== null}
+        title="Character Preset"
+        description="Pick the active character context for this chat."
+        selectedId={selectorChat?.characterPresetId ?? null}
+        options={characterPresets.map((preset) => ({
+          id: preset.id,
+          label: preset.name,
+        }))}
+        allowNone
+        noneLabel="No character preset"
+        onClose={() => setChatOptionSelector(null)}
+        onSelect={(value) => {
+          if (selectorChat) {
+            void persistChatOptionSelection(selectorChat.id, { characterPresetId: value });
+          }
+        }}
+      />
+
+      <ChatOptionSelectorModal
+        open={chatOptionSelector?.kind === "instructionPreset" && selectorChat !== null}
+        title="Instruction Preset"
+        description="Pick the active instruction set for this chat."
+        selectedId={selectorChat?.instructionPresetId ?? null}
+        options={instructionPresets.map((preset) => ({
+          id: preset.id,
+          label: preset.name,
+        }))}
+        allowNone
+        noneLabel="No instruction preset"
+        onClose={() => setChatOptionSelector(null)}
+        onSelect={(value) => {
+          if (selectorChat) {
+            void persistChatOptionSelection(selectorChat.id, { instructionPresetId: value });
+          }
+        }}
       />
     </main>
   );

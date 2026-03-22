@@ -28,7 +28,6 @@ interface SidebarProps {
   onNewChat: () => void;
   onViewChange: (view: SidebarView) => void;
   onSelectChat: (chatId: string) => void;
-  onEditChatSettings: (chatId: string) => void;
   onDeleteChat: (chatId: string) => void;
   onRenameChat: (chatId: string, title: string) => void;
   onRequireAuth: () => void;
@@ -48,7 +47,6 @@ export function Sidebar({
   onNewChat,
   onViewChange,
   onSelectChat,
-  onEditChatSettings,
   onDeleteChat,
   onRenameChat,
   onRequireAuth,
@@ -258,7 +256,6 @@ export function Sidebar({
                 )}
                 <ChatActionsMenu
                   onRenameChat={() => startRename(chat.id, chat.title)}
-                  onEditChatSettings={() => onEditChatSettings(chat.id)}
                   onDeleteChat={() => onDeleteChat(chat.id)}
                   triggerClassName="opacity-0 group-hover:opacity-100 focus:opacity-100"
                 />

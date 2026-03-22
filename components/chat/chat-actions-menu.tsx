@@ -6,7 +6,6 @@ import { Ellipsis } from "lucide-react";
 
 interface ChatActionsMenuProps {
   onRenameChat?: () => void;
-  onEditChatSettings: () => void;
   onDeleteChat?: () => void;
   triggerClassName?: string;
   menuAlign?: "left" | "right";
@@ -14,7 +13,6 @@ interface ChatActionsMenuProps {
 
 export function ChatActionsMenu({
   onRenameChat,
-  onEditChatSettings,
   onDeleteChat,
   triggerClassName,
   menuAlign = "right",
@@ -34,10 +32,7 @@ export function ChatActionsMenu({
     const rect = trigger.getBoundingClientRect();
     const menuWidth = 176;
 
-    const left =
-      menuAlign === "left"
-        ? rect.left
-        : Math.max(8, rect.right - menuWidth);
+    const left = menuAlign === "left" ? rect.left : Math.max(8, rect.right - menuWidth);
 
     setMenuPosition({
       top: rect.bottom + 6,
@@ -104,16 +99,6 @@ export function ChatActionsMenu({
                 Rename chat
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => {
-                onEditChatSettings();
-                setOpen(false);
-              }}
-              className="w-full rounded-[2px] px-3 py-2 text-left text-sm text-zinc-200 hover:bg-zinc-800"
-            >
-              Edit chat settings
-            </button>
             {onDeleteChat && (
               <button
                 type="button"
