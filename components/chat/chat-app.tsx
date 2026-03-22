@@ -1435,6 +1435,9 @@ export function ChatApp() {
             <ChatPanel
               chat={activeChat}
               modelLabel={activeChatModelLabel}
+              apiProfileLabel={activeChatApiProfile?.name ?? "API profile"}
+              characterPresetLabel={activeCharacterPreset?.name ?? "Character preset"}
+              instructionPresetLabel={activeInstructionPreset?.name ?? "Instruction preset"}
               inputDisabled={activeChatInputLocked}
               authRequired={isPreviewMode}
               setupRequired={!isPreviewMode && shouldShowSetupRequired}

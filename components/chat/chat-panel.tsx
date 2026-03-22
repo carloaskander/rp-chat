@@ -3,12 +3,15 @@
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import {
   ArrowUp,
+  BookText,
   Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Cpu,
   Pencil,
   SlidersHorizontal,
+  UserRound,
   X,
 } from "lucide-react";
 
@@ -17,6 +20,9 @@ import { ChatMessage, ChatSession } from "@/types/chat";
 interface ChatPanelProps {
   chat: ChatSession | null;
   modelLabel: string;
+  apiProfileLabel: string;
+  characterPresetLabel: string;
+  instructionPresetLabel: string;
   inputDisabled: boolean;
   authRequired: boolean;
   setupRequired: boolean;
@@ -161,6 +167,9 @@ function SummaryNotice({
 export function ChatPanel({
   chat,
   modelLabel,
+  apiProfileLabel,
+  characterPresetLabel,
+  instructionPresetLabel,
   inputDisabled,
   authRequired,
   setupRequired,
@@ -454,6 +463,9 @@ export function ChatPanel({
     }
   };
 
+  const controlButtonClassName =
+    "inline-flex min-w-0 items-center gap-2 rounded-full border border-zinc-800/80 bg-zinc-950/40 px-3 py-1.5 text-left text-xs text-zinc-400 transition hover:border-zinc-700 hover:bg-zinc-900 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-60";
+
   return (
     <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
       <header className="hidden items-start gap-3 px-8 pb-4 pt-7 md:flex">
@@ -735,57 +747,91 @@ export function ChatPanel({
         )}
 
         <div
-          className={`grid w-full max-w-full grid-cols-[minmax(0,1fr)_auto] gap-2 border border-zinc-800/80 bg-zinc-900/90 px-3 py-2 backdrop-blur ${
-            isComposerExpanded ? "rounded-[22px]" : "rounded-full"
+          className={`w-full max-w-full border border-zinc-800/80 bg-zinc-900/90 px-3 py-2 backdrop-blur ${
+            isComposerExpanded ? "rounded-[22px]" : "rounded-[26px]"
           }`}
         >
-          <div className="flex min-h-0 min-w-0 items-center overflow-hidden px-1">
-            <textarea
-              ref={textareaRef}
-              value={inputValue}
-              onChange={(event) => handleInputChange(event.target.value)}
-              onKeyDown={handleInputKeyDown}
-              onFocus={() => {
-                if (authRequired) {
-                  onRequireAuth();
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+            <div className="flex min-h-0 min-w-0 items-center overflow-hidden px-1">
+              <textarea
+                ref={textareaRef}
+                value={inputValue}
+                onChange={(event) => handleInputChange(event.target.value)}
+                onKeyDown={handleInputKeyDown}
+                onFocus={() => {
+                  if (authRequired) {
+                    onRequireAuth();
+                  }
+                }}
+                onClick={() => {
+                  if (authRequired) {
+                    onRequireAuth();
+                  }
+                }}
+                rows={1}
+                readOnly={authRequired}
+                disabled={inputDisabled || isThinking}
+                placeholder={
+                  authRequired
+                    ? "Preview mode..."
+                    : inputDisabled
+                      ? "Select chat settings..."
+                      : isThinking
+                        ? "Thinking..."
+                        : "Type your message..."
                 }
-              }}
-              onClick={() => {
-                if (authRequired) {
-                  onRequireAuth();
-                }
-              }}
-              rows={1}
-              readOnly={authRequired}
-              disabled={inputDisabled || isThinking}
-              placeholder={
+                className={`max-h-42 min-h-[24px] w-full min-w-0 resize-none bg-transparent px-2 py-0 text-[15px] leading-5 outline-none placeholder:text-zinc-500 sm:text-sm ${
+                  authRequired
+                    ? "cursor-pointer text-zinc-500"
+                    : "text-zinc-100 disabled:cursor-not-allowed disabled:text-zinc-500"
+                }`}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isThinking || inputDisabled}
+              aria-label={authRequired ? "Sign in to chat" : isThinking ? "Thinking" : "Send message"}
+              className={`self-end h-9 w-9 shrink-0 rounded-full border transition ${
                 authRequired
-                  ? "Preview mode..."
-                  : inputDisabled
-                    ? "Select chat settings..."
-                    : isThinking
-                      ? "Thinking..."
-                      : "Type your message..."
-              }
-              className={`max-h-42 min-h-[24px] w-full min-w-0 resize-none bg-transparent px-2 py-0 text-[15px] leading-5 outline-none placeholder:text-zinc-500 sm:text-sm ${
-                authRequired
-                  ? "cursor-pointer text-zinc-500"
-                  : "text-zinc-100 disabled:cursor-not-allowed disabled:text-zinc-500"
+                  ? "border-zinc-800 bg-zinc-900 text-zinc-500 hover:border-zinc-700 hover:bg-zinc-800 hover:text-zinc-300"
+                  : "border-zinc-700 bg-zinc-800 text-zinc-100 hover:bg-zinc-700 disabled:opacity-60"
               }`}
-            />
+            >
+              <ArrowUp className="mx-auto h-4 w-4" />
+            </button>
           </div>
-          <button
-            type="submit"
-            disabled={isThinking || inputDisabled}
-            aria-label={authRequired ? "Sign in to chat" : isThinking ? "Thinking" : "Send message"}
-            className={`self-end h-9 w-9 shrink-0 rounded-full border transition ${
-              authRequired
-                ? "border-zinc-800 bg-zinc-900 text-zinc-500 hover:border-zinc-700 hover:bg-zinc-800 hover:text-zinc-300"
-                : "border-zinc-700 bg-zinc-800 text-zinc-100 hover:bg-zinc-700 disabled:opacity-60"
-            }`}
-          >
-            <ArrowUp className="mx-auto h-4 w-4" />
-          </button>
+
+          <div className="mt-2 flex flex-wrap items-center gap-2 px-1">
+            <button
+              type="button"
+              onClick={onOpenChatSettings}
+              disabled={!chat}
+              className={controlButtonClassName}
+            >
+              <Cpu className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{apiProfileLabel}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onOpenChatSettings}
+              disabled={!chat}
+              className={controlButtonClassName}
+            >
+              <UserRound className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{characterPresetLabel}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onOpenChatSettings}
+              disabled={!chat}
+              className={controlButtonClassName}
+            >
+              <BookText className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{instructionPresetLabel}</span>
+            </button>
+          </div>
         </div>
         </div>
       </form>
