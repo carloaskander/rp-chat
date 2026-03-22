@@ -448,7 +448,7 @@ export function ChatPanel({
     setEditingValue("");
   };
 
-const getAnchorRect = (element: HTMLElement): SelectorAnchorRect => {
+  const getAnchorRect = (element: HTMLElement): SelectorAnchorRect => {
     const rect = element.getBoundingClientRect();
     return {
       top: rect.top,
