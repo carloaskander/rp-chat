@@ -1,6 +1,7 @@
 import { KeyboardEvent as ReactKeyboardEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
+  BookText,
   ChevronUp,
   CircleUserRound,
   Info,
@@ -9,6 +10,8 @@ import {
   PenSquare,
   Settings,
   Settings2,
+  UserRound,
+  type LucideIcon,
 } from "lucide-react";
 
 import { useAuth } from "@/components/auth/auth-provider";
@@ -32,9 +35,9 @@ interface SidebarProps {
   className?: string;
 }
 
-const navItems: Array<{ key: SidebarView; label: string }> = [
-  { key: "instructionPresets", label: "Instruction Presets" },
-  { key: "characterPresets", label: "Character Presets" },
+const navItems: Array<{ key: SidebarView; label: string; icon: LucideIcon }> = [
+  { key: "instructionPresets", label: "Instruction Presets", icon: BookText },
+  { key: "characterPresets", label: "Character Presets", icon: UserRound },
 ];
 
 export function Sidebar({
@@ -158,6 +161,13 @@ export function Sidebar({
     );
   };
 
+  const sidebarButtonClassName = (isActive: boolean) =>
+    `flex w-full items-center gap-3 rounded-[2px] px-3 py-3 text-left text-[15px] transition sm:py-2.5 sm:text-sm ${
+      isActive
+        ? "bg-zinc-900/80 text-zinc-100"
+        : "text-zinc-400 hover:bg-zinc-900/70 hover:text-zinc-200"
+    }`;
+
   return (
     <aside className={className ?? "flex h-full w-full max-w-72 flex-col px-2 py-2"}>
       <div className="px-3 pb-2 pt-1 md:hidden">
@@ -171,14 +181,12 @@ export function Sidebar({
         <button
           type="button"
           onClick={isPreviewMode ? onRequireAuth : onNewChat}
-          className={`inline-flex w-full items-center justify-center gap-2 rounded-[2px] px-3 py-3 text-base font-medium transition sm:py-2.5 sm:text-sm ${
-            isPreviewMode
-              ? "border border-dashed border-zinc-700 bg-zinc-900/40 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-900/70 hover:text-zinc-200"
-              : "bg-zinc-800/80 text-zinc-100 hover:bg-zinc-700/80"
+          className={`${sidebarButtonClassName(false)} ${
+            isPreviewMode ? "border border-dashed border-zinc-700" : ""
           }`}
         >
-          <PenSquare className="h-5 w-5" />
-          New Chat
+          <PenSquare className="h-4.5 w-4.5 shrink-0" />
+          <span className="min-w-0 flex-1 font-medium">New Chat</span>
         </button>
       </div>
 
@@ -186,18 +194,16 @@ export function Sidebar({
         <div className="space-y-1">
           {navItems.map((item) => {
             const isActive = activeView === item.key;
+            const Icon = item.icon;
             return (
               <button
                 key={item.key}
                 type="button"
                 onClick={() => onViewChange(item.key)}
-                className={`w-full rounded-[2px] px-3 py-2.5 text-left text-[15px] sm:py-2 sm:text-sm transition ${
-                  isActive
-                    ? "bg-zinc-800 text-zinc-100"
-                    : "text-zinc-400 hover:bg-zinc-900/70 hover:text-zinc-200"
-                }`}
+                className={sidebarButtonClassName(isActive)}
               >
-                {item.label}
+                <Icon className="h-4.5 w-4.5 shrink-0" />
+                <span className="min-w-0 flex-1 font-medium">{item.label}</span>
               </button>
             );
           })}
