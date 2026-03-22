@@ -151,7 +151,7 @@ function createSingleVersionMessage(message: {
 
 export function ChatApp() {
   const router = useRouter();
-  const { user, authResolved, isPreviewMode, lastAuthEvent, requireAuth } = useAuth();
+  const { user, session, authResolved, isPreviewMode, lastAuthEvent, requireAuth } = useAuth();
   const [chats, setChats] = useState<ChatSession[]>(() => chatAppCache.chats);
   const [activeChatId, setActiveChatId] = useState<string | null>(() => chatAppCache.activeChatId);
   const [instructionPresets, setInstructionPresets] = useLocalStorageState(
@@ -249,7 +249,7 @@ export function ChatApp() {
   }, [activeChatId, apiProfiles, chatMessagePagination, chats, loadedMessageChatIds, resolvedUserId]);
 
   useEffect(() => {
-    if (!authResolved || !resolvedUserId) {
+    if (!authResolved || !resolvedUserId || !session?.access_token) {
       setApiProfiles([]);
       return;
     }
@@ -294,10 +294,10 @@ export function ChatApp() {
     return () => {
       cancelled = true;
     };
-  }, [authResolved, resolvedUserId]);
+  }, [authResolved, resolvedUserId, session?.access_token]);
 
   useEffect(() => {
-    if (!authResolved || !resolvedUserId) {
+    if (!authResolved || !resolvedUserId || !session?.access_token) {
       return;
     }
 
@@ -388,7 +388,7 @@ export function ChatApp() {
     return () => {
       cancelled = true;
     };
-  }, [authResolved, resolvedUserId]);
+  }, [authResolved, resolvedUserId, session?.access_token]);
 
   const loadLatestMessagesForChat = useCallback(async (chatId: string) => {
     setChatMessagePagination((prev) => ({
@@ -472,7 +472,7 @@ export function ChatApp() {
   }, []);
 
   useEffect(() => {
-    if (!authResolved || !resolvedUserId || !activeChatId) {
+    if (!authResolved || !resolvedUserId || !session?.access_token || !activeChatId) {
       return;
     }
 
@@ -481,7 +481,7 @@ export function ChatApp() {
     }
 
     void loadLatestMessagesForChat(activeChatId);
-  }, [activeChatId, authResolved, loadLatestMessagesForChat, loadedMessageChatIds, resolvedUserId]);
+  }, [activeChatId, authResolved, loadLatestMessagesForChat, loadedMessageChatIds, resolvedUserId, session?.access_token]);
 
   useEffect(() => {
     if (!authResolved || !resolvedUserId) {
