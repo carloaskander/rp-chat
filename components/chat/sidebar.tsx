@@ -177,21 +177,19 @@ export function Sidebar({
         </div>
       </div>
 
-      <div className="p-2">
-        <button
-          type="button"
-          onClick={isPreviewMode ? onRequireAuth : onNewChat}
-          className={`${sidebarButtonClassName(false)} ${
-            isPreviewMode ? "border border-dashed border-zinc-700" : ""
-          }`}
-        >
-          <PenSquare className="h-4.5 w-4.5 shrink-0" />
-          <span className="min-w-0 flex-1 font-medium">New Chat</span>
-        </button>
-      </div>
-
       <nav className="p-2">
         <div className="space-y-1">
+          <button
+            type="button"
+            onClick={isPreviewMode ? onRequireAuth : onNewChat}
+            className={`${sidebarButtonClassName(false)} ${
+              isPreviewMode ? "border border-dashed border-zinc-700" : ""
+            }`}
+          >
+            <PenSquare className="h-4.5 w-4.5 shrink-0" />
+            <span className="min-w-0 flex-1 font-medium">New Chat</span>
+          </button>
+
           {navItems.map((item) => {
             const isActive = activeView === item.key;
             const Icon = item.icon;
