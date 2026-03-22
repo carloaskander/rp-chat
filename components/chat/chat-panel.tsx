@@ -16,6 +16,8 @@ import {
 
 import { ChatMessage, ChatSession } from "@/types/chat";
 
+import { SelectorAnchorRect } from "./chat-option-selector-modal";
+
 interface ChatPanelProps {
   chat: ChatSession | null;
   modelLabel: string;
@@ -34,9 +36,9 @@ interface ChatPanelProps {
   onLoadOlderMessages: () => Promise<void>;
   onEditMessage: (messageId: string, content: string) => Promise<void>;
   onActivateMessageVersion: (targetVersionId: string) => Promise<void>;
-  onOpenApiProfileSelector: () => void;
-  onOpenCharacterPresetSelector: () => void;
-  onOpenInstructionPresetSelector: () => void;
+  onOpenApiProfileSelector: (anchorRect?: SelectorAnchorRect) => void;
+  onOpenCharacterPresetSelector: (anchorRect?: SelectorAnchorRect) => void;
+  onOpenInstructionPresetSelector: (anchorRect?: SelectorAnchorRect) => void;
   onRequireAuth: () => void;
 }
 
@@ -446,6 +448,17 @@ export function ChatPanel({
     setEditingValue("");
   };
 
+const getAnchorRect = (element: HTMLElement): SelectorAnchorRect => {
+    const rect = element.getBoundingClientRect();
+    return {
+      top: rect.top,
+      left: rect.left,
+      bottom: rect.bottom,
+      width: rect.width,
+      height: rect.height,
+    };
+  };
+
   const handleSubmitMessageEdit = async () => {
     if (!editingMessageId) {
       return;
@@ -499,7 +512,7 @@ export function ChatPanel({
             </p>
             <button
               type="button"
-              onClick={onOpenApiProfileSelector}
+              onClick={(event) => onOpenApiProfileSelector(getAnchorRect(event.currentTarget))}
               className="mt-4 rounded-[2px] border border-zinc-700 bg-zinc-800 px-4 py-2 text-[15px] font-medium text-zinc-200 hover:bg-zinc-700 sm:px-3 sm:py-1.5 sm:text-sm"
             >
               {hasApiProfiles ? "Choose API Profile" : "Go to Settings"}
@@ -794,7 +807,7 @@ export function ChatPanel({
           <div className="mt-2 flex flex-wrap items-center gap-2 px-1">
             <button
               type="button"
-              onClick={onOpenApiProfileSelector}
+              onClick={(event) => onOpenApiProfileSelector(getAnchorRect(event.currentTarget))}
               disabled={!chat}
               className={controlButtonClassName}
             >
@@ -804,7 +817,9 @@ export function ChatPanel({
 
             <button
               type="button"
-              onClick={onOpenCharacterPresetSelector}
+              onClick={(event) =>
+                onOpenCharacterPresetSelector(getAnchorRect(event.currentTarget))
+              }
               disabled={!chat}
               className={controlButtonClassName}
             >
@@ -814,7 +829,9 @@ export function ChatPanel({
 
             <button
               type="button"
-              onClick={onOpenInstructionPresetSelector}
+              onClick={(event) =>
+                onOpenInstructionPresetSelector(getAnchorRect(event.currentTarget))
+              }
               disabled={!chat}
               className={controlButtonClassName}
             >

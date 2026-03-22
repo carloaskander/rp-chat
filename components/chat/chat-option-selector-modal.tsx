@@ -9,12 +9,21 @@ interface SelectorOption {
   description?: string;
 }
 
+export interface SelectorAnchorRect {
+  top: number;
+  left: number;
+  bottom: number;
+  width: number;
+  height: number;
+}
+
 interface ChatOptionSelectorModalProps {
   open: boolean;
   title: string;
   description: string;
   selectedId: string | null;
   options: SelectorOption[];
+  anchorRect?: SelectorAnchorRect | null;
   emptyStateTitle?: string;
   emptyStateDescription?: string;
   settingsHref?: string;
@@ -30,6 +39,7 @@ export function ChatOptionSelectorModal({
   description,
   selectedId,
   options,
+  anchorRect,
   emptyStateTitle = "No options available yet.",
   emptyStateDescription,
   settingsHref,
@@ -43,9 +53,25 @@ export function ChatOptionSelectorModal({
   }
 
   const hasOptions = options.length > 0;
+  const isDesktop = typeof window !== "undefined" && window.innerWidth >= 640;
+  const desktopWidth = 360;
+  const canAnchorToTrigger = Boolean(isDesktop && anchorRect);
+  const desktopLeft = canAnchorToTrigger
+    ? Math.min(Math.max(16, anchorRect!.left), window.innerWidth - desktopWidth - 16)
+    : null;
+  const shouldOpenBelow = canAnchorToTrigger ? anchorRect!.top < 240 : false;
+  const desktopTop = canAnchorToTrigger
+    ? shouldOpenBelow
+      ? Math.min(window.innerHeight - 24, anchorRect!.bottom + 10)
+      : Math.max(16, anchorRect!.top - 10)
+    : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/45 backdrop-blur-[1px] sm:items-center sm:justify-center sm:p-4">
+    <div
+      className={`fixed inset-0 z-50 flex items-end bg-black/45 backdrop-blur-[1px] sm:bg-transparent sm:backdrop-blur-0 ${
+        canAnchorToTrigger ? "sm:block" : "sm:items-center sm:justify-center sm:p-4"
+      }`}
+    >
       <button
         type="button"
         aria-label="Close selector"
@@ -53,7 +79,20 @@ export function ChatOptionSelectorModal({
         className="absolute inset-0"
       />
 
-      <div className="relative z-10 w-full rounded-t-[28px] border border-zinc-800 bg-zinc-950 px-4 pb-4 pt-4 shadow-2xl shadow-black/50 sm:max-w-md sm:rounded-[24px] sm:px-5 sm:pb-5 sm:pt-5">
+      <div
+        className={`relative z-10 w-full rounded-t-[28px] border border-zinc-800 bg-zinc-950 px-4 pb-4 pt-4 shadow-2xl shadow-black/50 sm:w-[22.5rem] sm:rounded-[24px] sm:px-5 sm:pb-5 sm:pt-5 ${
+          canAnchorToTrigger ? "sm:absolute" : "sm:max-w-md"
+        }`}
+        style={
+          canAnchorToTrigger
+            ? {
+                left: desktopLeft ?? undefined,
+                top: desktopTop ?? undefined,
+                transform: shouldOpenBelow ? undefined : "translateY(-100%)",
+              }
+            : undefined
+        }
+      >
         <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-zinc-700 sm:hidden" />
 
         <div className="flex items-start justify-between gap-3">

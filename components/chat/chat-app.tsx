@@ -17,7 +17,7 @@ import { ApiProfile } from "@/types/settings";
 import { useAuth } from "@/components/auth/auth-provider";
 
 import { CharacterPresetSelector } from "./character-preset-selector";
-import { ChatOptionSelectorModal } from "./chat-option-selector-modal";
+import { ChatOptionSelectorModal, SelectorAnchorRect } from "./chat-option-selector-modal";
 import { ChatPanel } from "./chat-panel";
 import { InstructionPresetSelector } from "./instruction-preset-selector";
 import { Sidebar } from "./sidebar";
@@ -46,6 +46,7 @@ type ChatOptionSelectorKind = "apiProfile" | "characterPreset" | "instructionPre
 interface ChatOptionSelectorState {
   chatId: string;
   kind: ChatOptionSelectorKind;
+  anchorRect: SelectorAnchorRect | null;
 }
 
 interface ChatMessageRow {
@@ -1359,7 +1360,7 @@ export function ChatApp() {
     );
   };
 
-  const handleOpenApiProfileSelector = (chatId: string) => {
+  const handleOpenApiProfileSelector = (chatId: string, anchorRect: SelectorAnchorRect | null = null) => {
     if (!requireAuth()) {
       return;
     }
@@ -1369,23 +1370,29 @@ export function ChatApp() {
       return;
     }
 
-    setChatOptionSelector({ chatId, kind: "apiProfile" });
+    setChatOptionSelector({ chatId, kind: "apiProfile", anchorRect });
   };
 
-  const handleOpenCharacterPresetSelector = (chatId: string) => {
+  const handleOpenCharacterPresetSelector = (
+    chatId: string,
+    anchorRect: SelectorAnchorRect | null = null,
+  ) => {
     if (!requireAuth()) {
       return;
     }
 
-    setChatOptionSelector({ chatId, kind: "characterPreset" });
+    setChatOptionSelector({ chatId, kind: "characterPreset", anchorRect });
   };
 
-  const handleOpenInstructionPresetSelector = (chatId: string) => {
+  const handleOpenInstructionPresetSelector = (
+    chatId: string,
+    anchorRect: SelectorAnchorRect | null = null,
+  ) => {
     if (!requireAuth()) {
       return;
     }
 
-    setChatOptionSelector({ chatId, kind: "instructionPreset" });
+    setChatOptionSelector({ chatId, kind: "instructionPreset", anchorRect });
   };
 
   return (
@@ -1476,19 +1483,19 @@ export function ChatApp() {
               onLoadOlderMessages={handleLoadOlderMessages}
               onEditMessage={handleEditMessage}
               onActivateMessageVersion={handleActivateMessageVersion}
-              onOpenApiProfileSelector={() => {
+              onOpenApiProfileSelector={(anchorRect) => {
                 if (activeChat) {
-                  handleOpenApiProfileSelector(activeChat.id);
+                  handleOpenApiProfileSelector(activeChat.id, anchorRect ?? null);
                 }
               }}
-              onOpenCharacterPresetSelector={() => {
+              onOpenCharacterPresetSelector={(anchorRect) => {
                 if (activeChat) {
-                  handleOpenCharacterPresetSelector(activeChat.id);
+                  handleOpenCharacterPresetSelector(activeChat.id, anchorRect ?? null);
                 }
               }}
-              onOpenInstructionPresetSelector={() => {
+              onOpenInstructionPresetSelector={(anchorRect) => {
                 if (activeChat) {
-                  handleOpenInstructionPresetSelector(activeChat.id);
+                  handleOpenInstructionPresetSelector(activeChat.id, anchorRect ?? null);
                 }
               }}
               onRequireAuth={requireAuth}
@@ -1524,6 +1531,7 @@ export function ChatApp() {
         title="API Profile"
         description="Choose which model profile this chat should use."
         selectedId={selectorChat?.apiProfileId ?? null}
+        anchorRect={chatOptionSelector?.anchorRect ?? null}
         options={apiProfiles.map((profile) => ({
           id: profile.id,
           label: profile.name,
@@ -1545,6 +1553,7 @@ export function ChatApp() {
         title="Character Preset"
         description="Pick the active character context for this chat."
         selectedId={selectorChat?.characterPresetId ?? null}
+        anchorRect={chatOptionSelector?.anchorRect ?? null}
         options={characterPresets.map((preset) => ({
           id: preset.id,
           label: preset.name,
@@ -1564,6 +1573,7 @@ export function ChatApp() {
         title="Instruction Preset"
         description="Pick the active instruction set for this chat."
         selectedId={selectorChat?.instructionPresetId ?? null}
+        anchorRect={chatOptionSelector?.anchorRect ?? null}
         options={instructionPresets.map((preset) => ({
           id: preset.id,
           label: preset.name,
