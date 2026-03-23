@@ -27,6 +27,8 @@ interface ChatOptionSelectorModalProps {
   emptyStateTitle?: string;
   emptyStateDescription?: string;
   settingsHref?: string;
+  createHref?: string;
+  createLabel?: string;
   allowNone?: boolean;
   noneLabel?: string;
   onClose: () => void;
@@ -43,6 +45,8 @@ export function ChatOptionSelectorModal({
   emptyStateTitle = "No options available yet.",
   emptyStateDescription,
   settingsHref,
+  createHref,
+  createLabel,
   allowNone = false,
   noneLabel = "None",
   onClose,
@@ -68,7 +72,7 @@ export function ChatOptionSelectorModal({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-end bg-black/45 backdrop-blur-[1px] sm:bg-transparent sm:backdrop-blur-0 ${
+      className={`fixed inset-0 z-50 flex items-end bg-black/45 sm:bg-transparent ${
         canAnchorToTrigger ? "sm:block" : "sm:items-center sm:justify-center sm:p-4"
       }`}
     >
@@ -109,6 +113,16 @@ export function ChatOptionSelectorModal({
             <X className="h-4 w-4" />
           </button>
         </div>
+
+        {(createHref && createLabel) && (
+          <Link
+            href={createHref}
+            onClick={onClose}
+            className="mt-4 inline-flex rounded-[10px] bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+          >
+            {createLabel}
+          </Link>
+        )}
 
         <div className="mt-4 max-h-[min(60vh,26rem)] overflow-y-auto">
           {hasOptions || allowNone ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Menu } from "lucide-react";
 
@@ -151,6 +151,7 @@ function createSingleVersionMessage(message: {
 
 export function ChatApp() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, session, authResolved, isPreviewMode, lastAuthEvent, requireAuth } = useAuth();
   const [chats, setChats] = useState<ChatSession[]>(() => chatAppCache.chats);
   const [activeChatId, setActiveChatId] = useState<string | null>(() => chatAppCache.activeChatId);
@@ -169,6 +170,14 @@ export function ChatApp() {
   const [chatOptionSelector, setChatOptionSelector] = useState<ChatOptionSelectorState | null>(null);
   const [thinkingChatId, setThinkingChatId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const requestedView = searchParams.get("view");
+
+    if (requestedView === "instructionPresets" || requestedView === "characterPresets" || requestedView === "chat") {
+      setActiveView(requestedView);
+    }
+  }, [searchParams]);
   const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
   const [chatMessagePagination, setChatMessagePagination] = useState<
     Record<string, ChatMessagePaginationState>
@@ -1577,6 +1586,8 @@ export function ChatApp() {
         emptyStateTitle="No API profiles yet."
         emptyStateDescription="Create an API profile in settings to start chatting with this conversation."
         settingsHref="/settings?section=api"
+        createHref="/settings?section=api"
+        createLabel="New API Profile"
         onClose={() => setChatOptionSelector(null)}
         onSelect={(value) => {
           if (selectorChat) {
@@ -1597,6 +1608,8 @@ export function ChatApp() {
         }))}
         allowNone
         noneLabel="No character preset"
+        createHref="/?view=characterPresets"
+        createLabel="New Character Preset"
         onClose={() => setChatOptionSelector(null)}
         onSelect={(value) => {
           if (selectorChat) {
@@ -1617,6 +1630,8 @@ export function ChatApp() {
         }))}
         allowNone
         noneLabel="No instruction preset"
+        createHref="/?view=instructionPresets"
+        createLabel="New Instruction Preset"
         onClose={() => setChatOptionSelector(null)}
         onSelect={(value) => {
           if (selectorChat) {
