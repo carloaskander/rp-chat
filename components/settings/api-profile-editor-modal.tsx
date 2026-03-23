@@ -33,6 +33,12 @@ const fieldClassName =
 const selectFieldClassName =
   "h-11 w-full appearance-none rounded-[8px] border-0 bg-zinc-900 px-3 pr-10 text-sm leading-[1.25] text-zinc-100 outline-none ring-0 shadow-none [-webkit-appearance:none]";
 
+const safariFieldClassName =
+  "h-11 w-full rounded-[10px] bg-zinc-900 px-3 text-sm leading-[1.25] text-zinc-100 outline-none placeholder:text-zinc-500";
+
+const safariSelectFieldClassName =
+  "h-11 w-full appearance-none rounded-[10px] border-0 bg-zinc-900 px-3 pr-10 text-sm leading-[1.25] text-zinc-100 outline-none ring-0 shadow-none [-webkit-appearance:none]";
+
 export function ApiProfileEditorModal({
   open,
   title,
@@ -115,6 +121,11 @@ export function ApiProfileEditorModal({
   };
 
   const roundedFieldStyle = isSafari ? safariRadiusFix : undefined;
+  const activeFieldClassName = isSafari ? safariFieldClassName : fieldClassName;
+  const activeSelectFieldClassName = isSafari ? safariSelectFieldClassName : selectFieldClassName;
+  const footerClassName = isSafari
+    ? "mt-10 pt-2 flex items-center justify-end gap-2"
+    : "mt-8 flex items-center justify-end gap-2";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -148,7 +159,7 @@ export function ApiProfileEditorModal({
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="My OpenAI"
-              className={fieldClassName}
+              className={activeFieldClassName}
               style={roundedFieldStyle}
             />
           </div>
@@ -157,11 +168,11 @@ export function ApiProfileEditorModal({
             <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-zinc-400">
               Provider
             </label>
-            <div className="relative overflow-hidden rounded-[8px]" style={roundedFieldStyle}>
+            <div className={`relative overflow-hidden ${isSafari ? "rounded-[10px]" : "rounded-[8px]"}`} style={roundedFieldStyle}>
               <select
                 value={provider}
                 onChange={(event) => setProvider(event.target.value)}
-                className={selectFieldClassName}
+                className={activeSelectFieldClassName}
               >
                 {providerOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -184,7 +195,7 @@ export function ApiProfileEditorModal({
               value={apiKey}
               onChange={(event) => setApiKey(event.target.value)}
               placeholder="sk-..."
-              className={fieldClassName}
+              className={activeFieldClassName}
               style={roundedFieldStyle}
             />
           </div>
@@ -196,11 +207,11 @@ export function ApiProfileEditorModal({
             <div className="flex items-stretch gap-2">
               <div className="min-w-0 flex-1">
                 {models.length > 0 ? (
-                  <div className="relative overflow-hidden rounded-[8px]" style={roundedFieldStyle}>
+                  <div className={`relative overflow-hidden ${isSafari ? "rounded-[10px]" : "rounded-[8px]"}`} style={roundedFieldStyle}>
                     <select
                       value={model}
                       onChange={(event) => setModel(event.target.value)}
-                      className={selectFieldClassName}
+                      className={activeSelectFieldClassName}
                     >
                       <option value="">Select model</option>
                       {models.map((modelId) => (
@@ -218,7 +229,7 @@ export function ApiProfileEditorModal({
                     value={model}
                     onChange={(event) => setModel(event.target.value)}
                     placeholder="Enter model id"
-                    className={fieldClassName}
+                    className={activeFieldClassName}
                     style={roundedFieldStyle}
                   />
                 )}
@@ -227,7 +238,7 @@ export function ApiProfileEditorModal({
                 type="button"
                 onClick={() => void loadModels(provider, apiKey)}
                 disabled={modelsLoading}
-                className="inline-flex h-11 shrink-0 items-center gap-1 rounded-[8px] bg-zinc-900 px-3 text-sm leading-[1.25] text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                className={`inline-flex h-11 shrink-0 items-center gap-1 bg-zinc-900 px-3 text-sm leading-[1.25] text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 ${isSafari ? "rounded-[10px]" : "rounded-[8px]"}`}
                 style={roundedFieldStyle}
               >
                 {modelsLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
@@ -238,7 +249,7 @@ export function ApiProfileEditorModal({
           </div>
         </div>
 
-        <div className="mt-8 flex items-center justify-end gap-2">
+        <div className={footerClassName}>
           <button
             type="button"
             onClick={onCancel}
