@@ -29,6 +29,9 @@ interface ChatOptionSelectorModalProps {
   settingsHref?: string;
   createHref?: string;
   createLabel?: string;
+  isLoading?: boolean;
+  loadingTitle?: string;
+  loadingDescription?: string;
   allowNone?: boolean;
   noneLabel?: string;
   onClose: () => void;
@@ -47,6 +50,9 @@ export function ChatOptionSelectorModal({
   settingsHref,
   createHref,
   createLabel,
+  isLoading = false,
+  loadingTitle = "Loading options...",
+  loadingDescription,
   allowNone = false,
   noneLabel = "None",
   onClose,
@@ -115,7 +121,14 @@ export function ChatOptionSelectorModal({
         </div>
 
         <div className="mt-4 max-h-[min(60vh,26rem)] overflow-y-auto">
-          {hasOptions || allowNone ? (
+          {isLoading ? (
+            <div className="rounded-[10px] bg-zinc-950/70 px-4 py-5 text-center">
+              <p className="text-sm font-medium text-zinc-100">{loadingTitle}</p>
+              {loadingDescription && (
+                <p className="mt-1 text-xs leading-5 text-zinc-500">{loadingDescription}</p>
+              )}
+            </div>
+          ) : hasOptions || allowNone ? (
             <div className="space-y-2">
               {allowNone && (
                 <button

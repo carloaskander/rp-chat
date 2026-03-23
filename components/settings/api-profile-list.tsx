@@ -10,6 +10,8 @@ import { ProviderBrandIcon } from "../ui/provider-brand-icon";
 
 interface ApiProfileListProps {
   profiles: ApiProfile[];
+  status: "idle" | "loading" | "loaded" | "empty" | "error";
+  errorMessage?: string | null;
   isPreviewMode?: boolean;
   onRequireAuth?: () => void;
   onCreateProfile: (value: Omit<ApiProfile, "id">) => Promise<void>;
@@ -27,6 +29,8 @@ const emptyDraft: Omit<ApiProfile, "id"> = {
 
 export function ApiProfileList({
   profiles,
+  status,
+  errorMessage = null,
   isPreviewMode = false,
   onRequireAuth,
   onCreateProfile,
@@ -92,7 +96,11 @@ export function ApiProfileList({
         </button>
       </div>
 
-      {profiles.length === 0 ? (
+      {status === "loading" ? (
+        <div className="rounded-[10px] p-4 text-sm text-zinc-400">Loading API profiles...</div>
+      ) : status === "error" ? (
+        <div className="rounded-[10px] p-4 text-sm text-rose-400">{errorMessage ?? "Could not load API profiles."}</div>
+      ) : profiles.length === 0 ? (
         <div className="rounded-[10px] p-4 text-sm text-zinc-400">
           {isPreviewMode
             ? "Your saved provider profiles will appear here once you sign in."

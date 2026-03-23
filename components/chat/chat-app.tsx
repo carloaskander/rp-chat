@@ -15,6 +15,7 @@ import { supabase } from "@/lib/supabase";
 import { ChatMessage, ChatSession, MessageVersion, Preset, SidebarView } from "@/types/chat";
 import { ApiProfile } from "@/types/settings";
 import { useAuth } from "@/components/auth/auth-provider";
+import { useApiProfiles } from "@/components/settings/api-profiles-provider";
 
 import { CharacterPresetSelector } from "./character-preset-selector";
 import { ChatOptionSelectorModal, SelectorAnchorRect } from "./chat-option-selector-modal";
@@ -34,10 +35,8 @@ interface ChatAppCacheState {
   userId: string | null;
   chats: ChatSession[];
   activeChatId: string | null;
-  apiProfiles: ApiProfile[];
   chatMessagePagination: Record<string, ChatMessagePaginationState>;
   loadedMessageChatIds: Record<string, true>;
-  hasLoadedProfiles: boolean;
   hasLoadedChats: boolean;
 }
 
@@ -68,10 +67,8 @@ const chatAppCache: ChatAppCacheState = {
   userId: null,
   chats: [],
   activeChatId: null,
-  apiProfiles: [],
   chatMessagePagination: {},
   loadedMessageChatIds: {},
-  hasLoadedProfiles: false,
   hasLoadedChats: false,
 };
 
@@ -163,8 +160,11 @@ export function ChatApp() {
     STORAGE_KEYS.characterPresets,
     DEFAULT_CHARACTER_PRESETS,
   );
-  const [apiProfiles, setApiProfiles] = useState<ApiProfile[]>(() => chatAppCache.apiProfiles);
-  const [hasLoadedApiProfiles, setHasLoadedApiProfiles] = useState(() => chatAppCache.hasLoadedProfiles);
+  const {
+    profiles: apiProfiles,
+    status: apiProfilesStatus,
+    hasLoaded: hasLoadedApiProfiles,
+  } = useApiProfiles();
 
   const [activeView, setActiveView] = useState<SidebarView>("chat");
   const [chatOptionSelector, setChatOptionSelector] = useState<ChatOptionSelectorState | null>(null);
@@ -234,82 +234,25 @@ export function ChatApp() {
       chatAppCache.userId = null;
       chatAppCache.chats = [];
       chatAppCache.activeChatId = null;
-      chatAppCache.apiProfiles = [];
       chatAppCache.chatMessagePagination = {};
       chatAppCache.loadedMessageChatIds = {};
-      chatAppCache.hasLoadedProfiles = false;
       chatAppCache.hasLoadedChats = false;
       setResolvedUserId(null);
       setChats([]);
       setActiveChatId(null);
-      setApiProfiles([]);
-      setHasLoadedApiProfiles(false);
       setChatMessagePagination({});
       setLoadedMessageChatIds({});
       setChatOptionSelector(null);
     }
-  }, [authResolved, lastAuthEvent, setApiProfiles]);
+  }, [authResolved, lastAuthEvent]);
 
   useEffect(() => {
     chatAppCache.userId = resolvedUserId;
     chatAppCache.chats = chats;
     chatAppCache.activeChatId = activeChatId;
-    chatAppCache.apiProfiles = apiProfiles;
     chatAppCache.chatMessagePagination = chatMessagePagination;
     chatAppCache.loadedMessageChatIds = loadedMessageChatIds;
-  }, [activeChatId, apiProfiles, chatMessagePagination, chats, loadedMessageChatIds, resolvedUserId]);
-
-  useEffect(() => {
-    if (!authResolved || !resolvedUserId || !session?.access_token) {
-      setApiProfiles([]);
-      setHasLoadedApiProfiles(false);
-      return;
-    }
-
-    if (chatAppCache.userId === resolvedUserId && chatAppCache.hasLoadedProfiles) {
-      setApiProfiles(chatAppCache.apiProfiles);
-      setHasLoadedApiProfiles(true);
-      return;
-    }
-
-    let cancelled = false;
-
-    const loadApiProfiles = async () => {
-      const { data, error } = await supabase
-        .from("api_profiles")
-        .select("id, name, provider, model, updated_at")
-        .eq("user_id", resolvedUserId)
-        .order("updated_at", { ascending: false });
-
-      if (cancelled) {
-        return;
-      }
-
-      if (error) {
-        console.error("Failed to load API profiles from Supabase.", error);
-        setHasLoadedApiProfiles(true);
-        return;
-      }
-
-      const nextProfiles: ApiProfile[] = (data ?? []).map((row) => ({
-        id: row.id,
-        name: row.name,
-        provider: row.provider,
-        model: row.model,
-        apiKey: "",
-      }));
-
-      setApiProfiles(nextProfiles);
-      setHasLoadedApiProfiles(true);
-      chatAppCache.hasLoadedProfiles = true;
-    };
-
-    void loadApiProfiles();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [authResolved, resolvedUserId, session?.access_token]);
+  }, [activeChatId, chatMessagePagination, chats, loadedMessageChatIds, resolvedUserId]);
 
   useEffect(() => {
     if (!authResolved || !resolvedUserId || !session?.access_token) {
@@ -1402,11 +1345,6 @@ export function ChatApp() {
       return;
     }
 
-    if (!hasApiProfiles) {
-      router.push("/settings?section=api");
-      return;
-    }
-
     const resolvedChatId = await resolveSelectorChatId(chatId);
     if (!resolvedChatId) {
       return;
@@ -1588,6 +1526,9 @@ export function ChatApp() {
         settingsHref="/settings?section=api"
         createHref="/settings?section=api"
         createLabel="New API Profile"
+        isLoading={apiProfilesStatus === "loading" || apiProfilesStatus === "idle"}
+        loadingTitle="Loading API profiles..."
+        loadingDescription="Your saved API profiles are being fetched."
         onClose={() => setChatOptionSelector(null)}
         onSelect={(value) => {
           if (selectorChat) {
