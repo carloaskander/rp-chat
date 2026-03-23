@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { CSSProperties, FormEvent, useCallback, useEffect, useState } from "react";
 import { ChevronDown, LoaderCircle, X } from "lucide-react";
 
 import { fetchProviderModels } from "@/lib/provider-models";
@@ -21,6 +21,11 @@ const providerOptions = [
   { value: "Anthropic", label: "Anthropic" },
   { value: "Google", label: "Google" },
 ];
+
+const safariRadiusFix: CSSProperties = {
+  WebkitMaskImage: "-webkit-radial-gradient(white, black)",
+  WebkitTransform: "translateZ(0)",
+};
 
 const fieldClassName =
   "h-11 w-full rounded-[8px] bg-zinc-900 px-3 text-sm leading-[1.25] text-zinc-100 outline-none placeholder:text-zinc-500";
@@ -109,6 +114,8 @@ export function ApiProfileEditorModal({
     }
   };
 
+  const roundedFieldStyle = isSafari ? safariRadiusFix : undefined;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <button type="button" aria-label="Close API profile editor" onClick={onCancel} className="absolute inset-0" />
@@ -142,6 +149,7 @@ export function ApiProfileEditorModal({
               onChange={(event) => setName(event.target.value)}
               placeholder="My OpenAI"
               className={fieldClassName}
+              style={roundedFieldStyle}
             />
           </div>
 
@@ -149,7 +157,7 @@ export function ApiProfileEditorModal({
             <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-zinc-400">
               Provider
             </label>
-            <div className="relative overflow-hidden rounded-[8px]">
+            <div className="relative overflow-hidden rounded-[8px]" style={roundedFieldStyle}>
               <select
                 value={provider}
                 onChange={(event) => setProvider(event.target.value)}
@@ -177,6 +185,7 @@ export function ApiProfileEditorModal({
               onChange={(event) => setApiKey(event.target.value)}
               placeholder="sk-..."
               className={fieldClassName}
+              style={roundedFieldStyle}
             />
           </div>
 
@@ -187,7 +196,7 @@ export function ApiProfileEditorModal({
             <div className="flex items-stretch gap-2">
               <div className="min-w-0 flex-1">
                 {models.length > 0 ? (
-                  <div className="relative overflow-hidden rounded-[8px]">
+                  <div className="relative overflow-hidden rounded-[8px]" style={roundedFieldStyle}>
                     <select
                       value={model}
                       onChange={(event) => setModel(event.target.value)}
@@ -210,6 +219,7 @@ export function ApiProfileEditorModal({
                     onChange={(event) => setModel(event.target.value)}
                     placeholder="Enter model id"
                     className={fieldClassName}
+                    style={roundedFieldStyle}
                   />
                 )}
               </div>
@@ -217,7 +227,8 @@ export function ApiProfileEditorModal({
                 type="button"
                 onClick={() => void loadModels(provider, apiKey)}
                 disabled={modelsLoading}
-                className="inline-flex h-11 shrink-0 items-center gap-1 rounded-[10px] bg-zinc-900 px-3 text-sm leading-[1.25] text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-11 shrink-0 items-center gap-1 rounded-[8px] bg-zinc-900 px-3 text-sm leading-[1.25] text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                style={roundedFieldStyle}
               >
                 {modelsLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
                 <span>{modelsLoading ? "Loading..." : "Fetch models"}</span>
