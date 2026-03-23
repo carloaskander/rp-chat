@@ -84,7 +84,7 @@ export function ChatActionsMenu({
         createPortal(
           <div
             ref={menuRef}
-            className="fixed z-[100] min-w-44 rounded-none border border-zinc-700 bg-zinc-900 p-1 shadow-lg shadow-black/40"
+            className="fixed z-[100] min-w-44 rounded-none bg-zinc-900 p-1 shadow-lg shadow-black/40"
             style={{ top: menuPosition.top, left: menuPosition.left }}
           >
             {onRenameChat && (

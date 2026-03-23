@@ -132,7 +132,7 @@ export function Sidebar({
       return (
         <div
           aria-hidden="true"
-          className={`${sizeClass} shrink-0 flex items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-zinc-400`}
+          className={`${sizeClass} shrink-0 flex items-center justify-center rounded-full bg-zinc-800 text-zinc-400`}
         >
           <CircleUserRound className="h-4.5 w-4.5" />
         </div>
@@ -143,7 +143,7 @@ export function Sidebar({
       return (
         <div
           aria-hidden="true"
-          className={`${sizeClass} shrink-0 rounded-full border border-zinc-700 bg-zinc-800 bg-cover bg-center bg-no-repeat`}
+          className={`${sizeClass} shrink-0 rounded-full bg-zinc-800 bg-cover bg-center bg-no-repeat`}
           style={{ backgroundImage: `url(${avatarUrl})` }}
         />
       );
@@ -152,7 +152,7 @@ export function Sidebar({
     return (
       <div
         aria-hidden="true"
-        className={`${sizeClass} shrink-0 flex items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-sm font-semibold text-zinc-100`}
+        className={`${sizeClass} shrink-0 flex items-center justify-center rounded-full bg-zinc-800 text-sm font-semibold text-zinc-100`}
       >
         {avatarFallback}
       </div>
@@ -181,7 +181,7 @@ export function Sidebar({
             type="button"
             onClick={isPreviewMode ? onRequireAuth : onNewChat}
             className={`${sidebarButtonClassName(false)} ${
-              isPreviewMode ? "border border-dashed border-zinc-700" : ""
+              isPreviewMode ? "border border-dashed" : ""
             }`}
           >
             <PenSquare className="h-4.5 w-4.5 shrink-0" />
@@ -267,7 +267,7 @@ export function Sidebar({
 
       <div className="relative border-t border-zinc-900/90 px-3 pb-3 pt-3" ref={accountMenuRef}>
         {isAccountMenuOpen && (
-          <div className="absolute inset-x-3 bottom-[calc(100%+0.35rem)] rounded-[22px] border border-zinc-800 bg-zinc-950/98 p-2 shadow-2xl shadow-black/40 backdrop-blur">
+          <div className="absolute inset-x-3 bottom-[calc(100%+0.35rem)] rounded-[22px] bg-zinc-950/98 p-2 shadow-2xl shadow-black/40 backdrop-blur">
             <div className="flex items-center gap-3 rounded-[18px] px-3 py-3">
               {renderAvatar("h-11 w-11")}
               <div className="min-w-0">
@@ -358,7 +358,7 @@ export function Sidebar({
         <button
           type="button"
           onClick={() => setIsAccountMenuOpen((prev) => !prev)}
-          className="flex w-full items-center gap-3 rounded-[20px] border border-zinc-800 bg-zinc-900/80 px-3 py-3 text-left transition hover:border-zinc-700 hover:bg-zinc-900"
+          className="flex w-full items-center gap-3 rounded-[20px] bg-zinc-900/80 px-3 py-3 text-left transition hover:border-zinc-700 hover:bg-zinc-900"
         >
           {renderAvatar("h-10 w-10")}
           <div className="min-w-0 flex-1">
