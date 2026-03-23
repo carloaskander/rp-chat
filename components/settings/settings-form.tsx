@@ -205,7 +205,7 @@ export function SettingsForm({ initialTab }: SettingsFormProps) {
         {activeTab === "account" && (
           <section className="p-2">
             <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-zinc-100">
+              <div className="flex h-11 w-11 items-center justify-center rounded-[10px] border border-zinc-700 bg-zinc-900 text-zinc-100">
                 <CircleUserRound className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">

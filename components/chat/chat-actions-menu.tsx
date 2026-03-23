@@ -84,7 +84,7 @@ export function ChatActionsMenu({
         createPortal(
           <div
             ref={menuRef}
-            className="fixed z-[100] min-w-44 rounded-[2px] border border-zinc-700 bg-zinc-900 p-1 shadow-lg shadow-black/40"
+            className="fixed z-[100] min-w-44 rounded-none border border-zinc-700 bg-zinc-900 p-1 shadow-lg shadow-black/40"
             style={{ top: menuPosition.top, left: menuPosition.left }}
           >
             {onRenameChat && (
@@ -94,7 +94,7 @@ export function ChatActionsMenu({
                   onRenameChat();
                   setOpen(false);
                 }}
-                className="w-full rounded-[2px] px-3 py-2 text-left text-sm text-zinc-200 hover:bg-zinc-800"
+                className="w-full rounded-none px-3 py-2 text-left text-sm text-zinc-200 hover:bg-zinc-800"
               >
                 Rename chat
               </button>
@@ -109,7 +109,7 @@ export function ChatActionsMenu({
                   }
                   setOpen(false);
                 }}
-                className="w-full rounded-[2px] px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800"
+                className="w-full rounded-none px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800"
               >
                 Delete chat
               </button>

@@ -160,7 +160,7 @@ export function Sidebar({
   };
 
   const sidebarButtonClassName = (isActive: boolean) =>
-    `flex w-full items-center gap-3 rounded-[2px] px-3 py-3 text-left text-[15px] transition sm:py-2.5 sm:text-sm ${
+    `flex w-full items-center gap-3 rounded-none px-3 py-3 text-left text-[15px] transition sm:py-2.5 sm:text-sm ${
       isActive
         ? "bg-zinc-900/80 text-zinc-100"
         : "text-zinc-400 hover:bg-zinc-900/70 hover:text-zinc-200"
@@ -212,7 +212,7 @@ export function Sidebar({
         </h2>
         <div className="h-full space-y-1 overflow-y-auto pr-1">
           {chats.length === 0 && (
-            <p className="rounded-[2px] bg-zinc-900/60 px-3 py-2 text-xs text-zinc-500">
+            <p className="rounded-none bg-zinc-900/60 px-3 py-2 text-xs text-zinc-500">
               No chats yet.
             </p>
           )}
@@ -222,7 +222,7 @@ export function Sidebar({
             return (
               <div
                 key={chat.id}
-                className={`group flex items-start gap-1 rounded-[2px] px-1 py-1 transition ${
+                className={`group flex items-start gap-1 rounded-none px-1 py-1 transition ${
                   isActive ? "bg-zinc-800/90 text-zinc-100" : "text-zinc-400 hover:bg-zinc-900/70"
                 }`}
               >
