@@ -84,8 +84,8 @@ export function ApiProfileList({
           }}
           className={`rounded-[10px] px-3 py-1.5 text-sm font-medium transition ${
             isPreviewMode
-              ? "text-zinc-400 hover:text-zinc-200"
-              : "text-zinc-300 hover:text-zinc-100"
+              ? "text-zinc-400 hover:bg-zinc-900/70 hover:text-zinc-200"
+              : "text-zinc-300 hover:bg-zinc-900/70 hover:text-zinc-100"
           }`}
         >
           Add API Profile
