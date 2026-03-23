@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronRight as ChevronDisclosure,
   Cpu,
   Pencil,
   UserRound,
@@ -480,7 +481,7 @@ export function ChatPanel({
   };
 
   const controlButtonClassName =
-    "inline-flex min-w-0 items-center gap-2 rounded-full border border-zinc-800/80 bg-zinc-950/40 px-3 py-1.5 text-left text-xs text-zinc-400 transition hover:border-zinc-700 hover:bg-zinc-900 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-60";
+    "inline-flex min-w-0 items-center gap-2 rounded-full bg-zinc-950/30 px-3 py-1.5 text-left text-xs text-zinc-400 transition hover:bg-zinc-900/80 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
     <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
@@ -812,7 +813,8 @@ export function ChatPanel({
               className={controlButtonClassName}
             >
               <Cpu className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">{apiProfileLabel}</span>
+              <span className="min-w-0 flex-1 truncate">{apiProfileLabel}</span>
+              <ChevronDisclosure className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
             </button>
 
             <button
@@ -824,7 +826,8 @@ export function ChatPanel({
               className={controlButtonClassName}
             >
               <UserRound className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">{characterPresetLabel}</span>
+              <span className="min-w-0 flex-1 truncate">{characterPresetLabel}</span>
+              <ChevronDisclosure className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
             </button>
 
             <button
@@ -836,7 +839,8 @@ export function ChatPanel({
               className={controlButtonClassName}
             >
               <BookText className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">{instructionPresetLabel}</span>
+              <span className="min-w-0 flex-1 truncate">{instructionPresetLabel}</span>
+              <ChevronDisclosure className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
             </button>
           </div>
         </div>
