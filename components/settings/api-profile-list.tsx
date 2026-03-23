@@ -93,7 +93,7 @@ export function ApiProfileList({
       </div>
 
       {profiles.length === 0 ? (
-        <div className="rounded-none p-4 text-sm text-zinc-400">
+        <div className="rounded-[8px] p-4 text-sm text-zinc-400">
           {isPreviewMode
             ? "Your saved provider profiles will appear here once you sign in."
             : "No API profiles yet. Add your first profile to continue."}
@@ -107,7 +107,7 @@ export function ApiProfileList({
             return (
             <article
               key={profile.id}
-              className="flex items-center justify-between rounded-none px-4 py-3 transition hover:bg-zinc-900/30"
+              className="flex items-center justify-between rounded-[8px] px-4 py-3 transition hover:bg-zinc-900/30"
             >
               <div className="flex min-w-0 flex-1 items-center gap-3 text-left">
                   <div className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-zinc-900 text-zinc-200">
