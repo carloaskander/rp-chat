@@ -16,6 +16,22 @@ button {
   font: inherit;
 }
 
+input,
+textarea,
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  border-radius: 0;
+  background-image: none;
+  box-shadow: none;
+  line-height: 1.25;
+}
+
+select::-ms-expand {
+  display: none;
+}
+
 * {
   scrollbar-color: #3f3f46 #18181b;
 }

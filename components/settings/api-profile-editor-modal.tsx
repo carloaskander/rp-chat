@@ -23,10 +23,10 @@ const providerOptions = [
 ];
 
 const fieldClassName =
-  "h-11 w-full rounded-[8px] bg-zinc-900 px-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-500";
+  "h-11 w-full rounded-[8px] bg-zinc-900 px-3 text-sm leading-[1.25] text-zinc-100 outline-none placeholder:text-zinc-500";
 
 const selectFieldClassName =
-  "h-11 w-full appearance-none rounded-[8px] border-0 bg-zinc-900 px-3 pr-10 text-sm text-zinc-100 outline-none ring-0 shadow-none [-webkit-appearance:none]";
+  "h-11 w-full appearance-none rounded-[8px] border-0 bg-zinc-900 px-3 pr-10 text-sm leading-[1.25] text-zinc-100 outline-none ring-0 shadow-none [-webkit-appearance:none]";
 
 export function ApiProfileEditorModal({
   open,
@@ -149,7 +149,7 @@ export function ApiProfileEditorModal({
             <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-zinc-400">
               Provider
             </label>
-            <div className="relative">
+            <div className="relative overflow-hidden rounded-[8px]">
               <select
                 value={provider}
                 onChange={(event) => setProvider(event.target.value)}
@@ -187,7 +187,7 @@ export function ApiProfileEditorModal({
             <div className="flex items-stretch gap-2">
               <div className="min-w-0 flex-1">
                 {models.length > 0 ? (
-                  <div className="relative">
+                  <div className="relative overflow-hidden rounded-[8px]">
                     <select
                       value={model}
                       onChange={(event) => setModel(event.target.value)}
@@ -217,7 +217,7 @@ export function ApiProfileEditorModal({
                 type="button"
                 onClick={() => void loadModels(provider, apiKey)}
                 disabled={modelsLoading}
-                className="inline-flex h-11 shrink-0 items-center gap-1 rounded-[10px] bg-zinc-900 px-3 text-sm text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-11 shrink-0 items-center gap-1 rounded-[10px] bg-zinc-900 px-3 text-sm leading-[1.25] text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {modelsLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
                 <span>{modelsLoading ? "Loading..." : "Fetch models"}</span>
