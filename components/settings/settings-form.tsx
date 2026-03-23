@@ -242,7 +242,7 @@ export function SettingsForm({ initialTab }: SettingsFormProps) {
 
         {activeTab === "api" && (
           <section className="rounded-[22px] border border-zinc-800 bg-zinc-950/80">
-            <div className="flex items-start gap-3 border-b border-zinc-800 px-5 py-4">
+            <div className="flex items-start gap-3 px-5 py-4">
               <Settings2 className="mt-0.5 h-5 w-5 text-zinc-400" />
               <div>
                 <h2 className="text-base font-medium text-zinc-100">API Profiles</h2>

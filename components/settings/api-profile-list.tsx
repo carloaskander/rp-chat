@@ -81,10 +81,10 @@ export function ApiProfileList({
             setIsCreating(true);
             setEditingProfileId(null);
           }}
-          className={`rounded-[2px] border px-3 py-1.5 text-sm font-medium transition ${
+          className={`rounded-[16px] px-3 py-1.5 text-sm font-medium transition ${
             isPreviewMode
-              ? "border-dashed border-zinc-700 bg-zinc-900/40 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-900/70 hover:text-zinc-200"
-              : "border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+              ? "text-zinc-400 hover:bg-zinc-900/70 hover:text-zinc-200"
+              : "bg-zinc-900/70 text-zinc-300 hover:bg-zinc-800"
           }`}
         >
           Add API Profile
@@ -92,7 +92,7 @@ export function ApiProfileList({
       </div>
 
       {profiles.length === 0 ? (
-        <div className="rounded-[18px] border border-zinc-800 bg-zinc-900/60 p-4 text-sm text-zinc-400">
+        <div className="rounded-[18px] bg-zinc-900/60 p-4 text-sm text-zinc-400">
           {isPreviewMode
             ? "Your saved provider profiles will appear here once you sign in."
             : "No API profiles yet. Add your first profile to continue."}
@@ -106,10 +106,10 @@ export function ApiProfileList({
             return (
             <article
               key={profile.id}
-              className="flex items-center justify-between rounded-[2px] bg-zinc-900/60 px-3 py-3 transition hover:bg-zinc-800/70"
+              className="flex items-center justify-between rounded-[18px] bg-zinc-900/50 px-4 py-3 transition hover:bg-zinc-900/80"
             >
               <div className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-[2px] bg-zinc-700 text-xs font-semibold text-zinc-200">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-800 text-[11px] font-semibold text-zinc-300">
                     API
                   </div>
                   <div className="min-w-0">
@@ -138,7 +138,7 @@ export function ApiProfileList({
                       void handleValidateProfile(profile);
                     }}
                     disabled={isValidating}
-                    className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-[14px] px-2.5 py-1 text-xs text-zinc-300 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isValidating ? "Validating..." : "Validate"}
                   </button>
@@ -152,7 +152,7 @@ export function ApiProfileList({
                       setIsCreating(false);
                       setEditingProfileId(profile.id);
                     }}
-                    className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700"
+                    className="rounded-[14px] px-2.5 py-1 text-xs text-zinc-300 transition hover:bg-zinc-800"
                   >
                     Edit
                   </button>
@@ -166,7 +166,7 @@ export function ApiProfileList({
                       void handleDeleteProfile(profile.id);
                     }}
                     disabled={deletingProfileId === profile.id}
-                    className="rounded-[2px] border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
+                    className="rounded-[14px] px-2.5 py-1 text-xs text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200"
                   >
                     {deletingProfileId === profile.id ? "Deleting..." : "Delete"}
                   </button>
