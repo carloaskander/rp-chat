@@ -114,19 +114,18 @@ export function ChatOptionSelectorModal({
           </button>
         </div>
 
-        {(createHref && createLabel) && (
-          <Link
-            href={createHref}
-            onClick={onClose}
-            className="mt-4 inline-flex rounded-[10px] bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
-          >
-            {createLabel}
-          </Link>
-        )}
-
         <div className="mt-4 max-h-[min(60vh,26rem)] overflow-y-auto">
           {hasOptions || allowNone ? (
             <div className="space-y-2">
+              {createHref && createLabel && (
+                <Link
+                  href={createHref}
+                  onClick={onClose}
+                  className="flex w-full items-center justify-between rounded-[10px] px-4 py-3 text-left text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+                >
+                  <span className="text-sm font-medium">{createLabel}</span>
+                </Link>
+              )}
               {allowNone && (
                 <button
                   type="button"
