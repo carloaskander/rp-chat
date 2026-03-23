@@ -26,7 +26,7 @@ const fieldClassName =
   "h-11 w-full rounded-[8px] bg-zinc-900 px-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-500";
 
 const selectFieldClassName =
-  "h-11 w-full appearance-none rounded-[8px] bg-transparent px-3 pr-10 text-sm text-zinc-100 outline-none";
+  "h-11 w-full appearance-none rounded-[8px] border-0 bg-zinc-900 px-3 pr-10 text-sm text-zinc-100 outline-none ring-0 shadow-none [-webkit-appearance:none]";
 
 export function ApiProfileEditorModal({
   open,
@@ -138,7 +138,7 @@ export function ApiProfileEditorModal({
             <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-zinc-400">
               Provider
             </label>
-            <div className="relative rounded-[8px] bg-zinc-950">
+            <div className="relative">
               <select
                 value={provider}
                 onChange={(event) => setProvider(event.target.value)}
@@ -170,7 +170,7 @@ export function ApiProfileEditorModal({
               </button>
             </div>
             {models.length > 0 ? (
-              <div className="relative rounded-[8px] bg-zinc-950">
+              <div className="relative">
                 <select
                   value={model}
                   onChange={(event) => setModel(event.target.value)}
