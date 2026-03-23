@@ -82,7 +82,7 @@ export function ApiProfileList({
             setIsCreating(true);
             setEditingProfileId(null);
           }}
-          className={`rounded-[8px] px-3 py-1.5 text-sm font-medium transition ${
+          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
             isPreviewMode
               ? "bg-zinc-900/60 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
               : "bg-zinc-900/80 text-zinc-200 hover:bg-zinc-900 hover:text-zinc-100"
@@ -93,7 +93,7 @@ export function ApiProfileList({
       </div>
 
       {profiles.length === 0 ? (
-        <div className="rounded-[8px] p-4 text-sm text-zinc-400">
+        <div className="rounded-lg p-4 text-sm text-zinc-400">
           {isPreviewMode
             ? "Your saved provider profiles will appear here once you sign in."
             : "No API profiles yet. Add your first profile to continue."}
@@ -107,10 +107,10 @@ export function ApiProfileList({
             return (
             <article
               key={profile.id}
-              className="flex items-center justify-between rounded-[8px] px-4 py-3 transition hover:bg-zinc-900/30"
+              className="flex items-center justify-between rounded-lg px-4 py-3 transition hover:bg-zinc-900/30"
             >
               <div className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-zinc-900 text-zinc-200">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 text-zinc-200">
                     <ProviderBrandIcon provider={profile.provider} className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
@@ -139,7 +139,7 @@ export function ApiProfileList({
                       void handleValidateProfile(profile);
                     }}
                     disabled={isValidating}
-                    className="rounded-[8px] px-2.5 py-1 text-xs text-zinc-300 transition hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-lg px-2.5 py-1 text-xs text-zinc-300 transition hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isValidating ? "Validating..." : "Validate"}
                   </button>
@@ -153,7 +153,7 @@ export function ApiProfileList({
                       setIsCreating(false);
                       setEditingProfileId(profile.id);
                     }}
-                    className="rounded-[8px] px-2.5 py-1 text-xs text-zinc-300 transition hover:text-zinc-100"
+                    className="rounded-lg px-2.5 py-1 text-xs text-zinc-300 transition hover:text-zinc-100"
                   >
                     Edit
                   </button>
@@ -167,7 +167,7 @@ export function ApiProfileList({
                       void handleDeleteProfile(profile.id);
                     }}
                     disabled={deletingProfileId === profile.id}
-                    className="rounded-[8px] px-2.5 py-1 text-xs text-rose-400 transition hover:text-rose-300"
+                    className="rounded-lg px-2.5 py-1 text-xs text-rose-400 transition hover:text-rose-300"
                   >
                     {deletingProfileId === profile.id ? "Deleting..." : "Delete"}
                   </button>

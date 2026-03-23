@@ -205,7 +205,7 @@ export function SettingsForm({ initialTab }: SettingsFormProps) {
         {activeTab === "account" && (
           <section className="p-2">
             <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-[8px] bg-zinc-900 text-zinc-100">
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-zinc-900 text-zinc-100">
                 <CircleUserRound className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
@@ -229,7 +229,7 @@ export function SettingsForm({ initialTab }: SettingsFormProps) {
                     <button
                       type="button"
                       onClick={() => void signOut()}
-                      className="mt-4 inline-flex items-center rounded-[8px] px-4 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-900/70 hover:text-zinc-100"
+                      className="mt-4 inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-900/70 hover:text-zinc-100"
                     >
                       Log out
                     </button>
