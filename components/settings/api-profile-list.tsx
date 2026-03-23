@@ -167,7 +167,7 @@ export function ApiProfileList({
                       void handleDeleteProfile(profile.id);
                     }}
                     disabled={deletingProfileId === profile.id}
-                    className="rounded-[10px] px-2.5 py-1 text-xs text-zinc-400 transition hover:text-zinc-200"
+                    className="rounded-[10px] px-2.5 py-1 text-xs text-rose-400 transition hover:text-rose-300"
                   >
                     {deletingProfileId === profile.id ? "Deleting..." : "Delete"}
                   </button>

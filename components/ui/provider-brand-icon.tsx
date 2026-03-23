@@ -1,7 +1,6 @@
 "use client";
 
-import { SiAnthropic, SiGoogle } from "@icons-pack/react-simple-icons";
-import { Bot, MoonStar, Sparkles, Zap } from "lucide-react";
+import { Bot, Brain, Globe, MoonStar, Sparkles } from "lucide-react";
 
 interface ProviderBrandIconProps {
   provider: string;
@@ -30,23 +29,23 @@ export function ProviderBrandIcon({ provider, className }: ProviderBrandIconProp
   const canonicalProvider = toCanonicalProvider(provider);
   const baseClassName = className ?? "h-4 w-4";
 
-  if (canonicalProvider === "anthropic") {
-    return <SiAnthropic className={baseClassName} title="Anthropic" />;
+  if (canonicalProvider === "openai") {
+    return <Sparkles className={baseClassName} aria-hidden="true" />;
   }
 
-  if (canonicalProvider === "google") {
-    return <SiGoogle className={baseClassName} title="Google" />;
+  if (canonicalProvider === "xai") {
+    return <Globe className={baseClassName} aria-hidden="true" />;
   }
 
   if (canonicalProvider === "moonshot") {
     return <MoonStar className={baseClassName} aria-hidden="true" />;
   }
 
-  if (canonicalProvider === "xai") {
-    return <Zap className={baseClassName} aria-hidden="true" />;
+  if (canonicalProvider === "anthropic") {
+    return <Brain className={baseClassName} aria-hidden="true" />;
   }
 
-  if (canonicalProvider === "openai") {
+  if (canonicalProvider === "google") {
     return <Sparkles className={baseClassName} aria-hidden="true" />;
   }
 
