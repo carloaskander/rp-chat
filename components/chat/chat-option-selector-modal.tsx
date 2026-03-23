@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check, X } from "lucide-react";
+import { Check, Plus, X } from "lucide-react";
 
 interface SelectorOption {
   id: string;
@@ -117,15 +117,6 @@ export function ChatOptionSelectorModal({
         <div className="mt-4 max-h-[min(60vh,26rem)] overflow-y-auto">
           {hasOptions || allowNone ? (
             <div className="space-y-2">
-              {createHref && createLabel && (
-                <Link
-                  href={createHref}
-                  onClick={onClose}
-                  className="flex w-full items-center justify-between rounded-[10px] px-4 py-3 text-left text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
-                >
-                  <span className="text-sm font-medium">{createLabel}</span>
-                </Link>
-              )}
               {allowNone && (
                 <button
                   type="button"
@@ -170,6 +161,19 @@ export function ChatOptionSelectorModal({
                   </button>
                 );
               })}
+
+              {createHref && createLabel && (
+                <Link
+                  href={createHref}
+                  onClick={onClose}
+                  className="flex w-full items-center justify-between rounded-[10px] px-4 py-3 text-left text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+                >
+                  <span className="flex items-center gap-2 text-sm font-medium">
+                    <Plus className="h-4 w-4 shrink-0" />
+                    {createLabel}
+                  </span>
+                </Link>
+              )}
             </div>
           ) : (
             <div className="rounded-[10px] bg-zinc-950/70 px-4 py-5 text-center">
