@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { ChevronDown, LoaderCircle, X } from "lucide-react";
 
 import { fetchProviderModels } from "@/lib/provider-models";
@@ -44,6 +44,17 @@ export function ApiProfileEditorModal({
   const [modelsError, setModelsError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSafari, setIsSafari] = useState(false);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined") {
+      return;
+    }
+
+    const ua = navigator.userAgent;
+    const safari = /Safari/i.test(ua) && !/Chrome|Chromium|Android/i.test(ua);
+    setIsSafari(safari);
+  }, []);
 
   const loadModels = useCallback(async (providerValue: string, apiKeyValue: string) => {
     if (!open) {
@@ -150,50 +161,10 @@ export function ApiProfileEditorModal({
                   </option>
                 ))}
               </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-            </div>
-          </div>
-
-          <div>
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <label className="block text-xs font-medium uppercase tracking-wide text-zinc-400">
-                Model
-              </label>
-              <button
-                type="button"
-                onClick={() => void loadModels(provider, apiKey)}
-                disabled={modelsLoading}
-                className="inline-flex items-center gap-1 rounded-[10px] bg-zinc-900 px-2.5 py-1 text-xs text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {modelsLoading ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : null}
-                <span>{modelsLoading ? "Loading..." : "Fetch models"}</span>
-              </button>
-            </div>
-            {models.length > 0 ? (
-              <div className="relative">
-                <select
-                  value={model}
-                  onChange={(event) => setModel(event.target.value)}
-                  className={selectFieldClassName}
-                >
-                  <option value="">Select model</option>
-                  {models.map((modelId) => (
-                    <option key={modelId} value={modelId}>
-                      {modelId}
-                    </option>
-                  ))}
-                </select>
+              {!isSafari ? (
                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-              </div>
-            ) : (
-              <input
-                value={model}
-                onChange={(event) => setModel(event.target.value)}
-                placeholder="Enter model id"
-                className={fieldClassName}
-              />
-            )}
-            {modelsError && <p className="mt-2 text-xs text-zinc-500">{modelsError}</p>}
+              ) : null}
+            </div>
           </div>
 
           <div>
@@ -207,6 +178,52 @@ export function ApiProfileEditorModal({
               placeholder="sk-..."
               className={fieldClassName}
             />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+              Model
+            </label>
+            <div className="flex items-stretch gap-2">
+              <div className="min-w-0 flex-1">
+                {models.length > 0 ? (
+                  <div className="relative">
+                    <select
+                      value={model}
+                      onChange={(event) => setModel(event.target.value)}
+                      className={selectFieldClassName}
+                    >
+                      <option value="">Select model</option>
+                      {models.map((modelId) => (
+                        <option key={modelId} value={modelId}>
+                          {modelId}
+                        </option>
+                      ))}
+                    </select>
+                    {!isSafari ? (
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                    ) : null}
+                  </div>
+                ) : (
+                  <input
+                    value={model}
+                    onChange={(event) => setModel(event.target.value)}
+                    placeholder="Enter model id"
+                    className={fieldClassName}
+                  />
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => void loadModels(provider, apiKey)}
+                disabled={modelsLoading}
+                className="inline-flex h-11 shrink-0 items-center gap-1 rounded-[10px] bg-zinc-900 px-3 text-sm text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {modelsLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+                <span>{modelsLoading ? "Loading..." : "Fetch models"}</span>
+              </button>
+            </div>
+            {modelsError && <p className="mt-2 text-xs text-zinc-500">{modelsError}</p>}
           </div>
         </div>
 
