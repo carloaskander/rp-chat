@@ -203,7 +203,7 @@ export function SettingsForm({ initialTab }: SettingsFormProps) {
 
       <div className="min-w-0 space-y-5 px-5 pb-6">
         {activeTab === "account" && (
-          <section className="rounded-[22px] border border-zinc-800 bg-zinc-950/80 p-5">
+          <section className="p-2">
             <div className="flex items-start gap-4">
               <div className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-zinc-100">
                 <CircleUserRound className="h-5 w-5" />
@@ -222,14 +222,14 @@ export function SettingsForm({ initialTab }: SettingsFormProps) {
                     <p className="mt-1 text-sm text-zinc-400">
                       You are signed in and ready to use the app.
                     </p>
-                    <div className="mt-4 rounded-[18px] border border-zinc-800 bg-zinc-900/70 px-4 py-3">
+                    <div className="mt-4 px-1 py-1">
                       <p className="text-xs uppercase tracking-[0.12em] text-zinc-500">Email</p>
                       <p className="mt-1 truncate text-sm text-zinc-200">{user?.email ?? "Signed out"}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => void signOut()}
-                      className="mt-4 inline-flex items-center rounded-[16px] border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-800"
+                      className="mt-4 inline-flex items-center rounded-[10px] px-4 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-900/70 hover:text-zinc-100"
                     >
                       Log out
                     </button>
@@ -241,7 +241,7 @@ export function SettingsForm({ initialTab }: SettingsFormProps) {
         )}
 
         {activeTab === "api" && (
-          <section className="rounded-[22px] border border-zinc-800 bg-zinc-950/80">
+          <section>
             <div className="flex items-start gap-3 px-5 py-4">
               <Settings2 className="mt-0.5 h-5 w-5 text-zinc-400" />
               <div>
@@ -264,7 +264,7 @@ export function SettingsForm({ initialTab }: SettingsFormProps) {
         )}
 
         {activeTab === "appearance" && (
-          <section className="rounded-[22px] border border-zinc-800 bg-zinc-950/80 p-5">
+          <section className="p-2">
             <div className="flex items-start gap-3">
               <Palette className="mt-0.5 h-5 w-5 text-zinc-400" />
               <div>
@@ -278,7 +278,7 @@ export function SettingsForm({ initialTab }: SettingsFormProps) {
         )}
 
         {activeTab === "about" && (
-          <section className="rounded-[22px] border border-zinc-800 bg-zinc-950/80 p-5">
+          <section className="p-2">
             <div className="flex items-start gap-3">
               <Info className="mt-0.5 h-5 w-5 text-zinc-400" />
               <div>
