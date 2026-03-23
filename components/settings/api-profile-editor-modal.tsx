@@ -25,6 +25,9 @@ const providerOptions = [
 const fieldClassName =
   "h-11 w-full rounded-[8px] bg-zinc-900 px-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-500";
 
+const selectFieldClassName =
+  "h-11 w-full appearance-none rounded-[8px] bg-transparent px-3 pr-10 text-sm text-zinc-100 outline-none";
+
 export function ApiProfileEditorModal({
   open,
   title,
@@ -135,11 +138,11 @@ export function ApiProfileEditorModal({
             <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-zinc-400">
               Provider
             </label>
-            <div className="relative">
+            <div className="relative rounded-[8px] bg-zinc-950">
               <select
                 value={provider}
                 onChange={(event) => setProvider(event.target.value)}
-                className={`${fieldClassName} appearance-none pr-12 leading-none`}
+                className={selectFieldClassName}
               >
                 {providerOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -147,9 +150,7 @@ export function ApiProfileEditorModal({
                   </option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute inset-y-1 right-1 flex items-center rounded-[8px] bg-zinc-800/90 px-2 text-zinc-400">
-                <ChevronDown className="h-4 w-4" />
-              </div>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
             </div>
           </div>
 
@@ -169,11 +170,11 @@ export function ApiProfileEditorModal({
               </button>
             </div>
             {models.length > 0 ? (
-              <div className="relative">
+              <div className="relative rounded-[8px] bg-zinc-950">
                 <select
                   value={model}
                   onChange={(event) => setModel(event.target.value)}
-                  className={`${fieldClassName} appearance-none pr-12 leading-none`}
+                  className={selectFieldClassName}
                 >
                   <option value="">Select model</option>
                   {models.map((modelId) => (
@@ -182,9 +183,7 @@ export function ApiProfileEditorModal({
                     </option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-1 right-1 flex items-center rounded-[8px] bg-zinc-800/90 px-2 text-zinc-400">
-                  <ChevronDown className="h-4 w-4" />
-                </div>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
               </div>
             ) : (
               <input
