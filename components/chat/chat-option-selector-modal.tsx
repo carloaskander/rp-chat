@@ -80,7 +80,7 @@ export function ChatOptionSelectorModal({
       />
 
       <div
-        className={`relative z-10 w-full rounded-t-[28px] border border-zinc-800 bg-zinc-950 px-4 pb-4 pt-4 shadow-2xl shadow-black/50 sm:w-[22.5rem] sm:rounded-[24px] sm:px-5 sm:pb-5 sm:pt-5 ${
+        className={`relative z-10 w-full rounded-t-[28px] bg-zinc-950 px-4 pb-4 pt-4 shadow-2xl shadow-black/50 sm:w-[22.5rem] sm:rounded-[10px] sm:px-5 sm:pb-5 sm:pt-5 ${
           canAnchorToTrigger ? "sm:absolute" : "sm:max-w-md"
         }`}
         style={
@@ -104,7 +104,7 @@ export function ChatOptionSelectorModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-zinc-500 transition hover:bg-zinc-900 hover:text-zinc-200"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-zinc-500 transition hover:bg-zinc-900 hover:text-zinc-200"
           >
             <X className="h-4 w-4" />
           </button>
@@ -120,10 +120,10 @@ export function ChatOptionSelectorModal({
                     onSelect(null);
                     onClose();
                   }}
-                  className={`flex w-full items-center justify-between rounded-[18px] border px-4 py-3 text-left transition ${
+                  className={`flex w-full items-center justify-between rounded-[10px] px-4 py-3 text-left transition ${
                     selectedId === null
-                      ? "border-zinc-600 bg-zinc-900 text-zinc-100"
-                      : "border-zinc-800 bg-zinc-950/70 text-zinc-300 hover:border-zinc-700 hover:bg-zinc-900"
+                      ? "bg-zinc-900 text-zinc-100"
+                      : "text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100"
                   }`}
                 >
                   <span className="text-sm font-medium">{noneLabel}</span>
@@ -141,7 +141,7 @@ export function ChatOptionSelectorModal({
                       onSelect(option.id);
                       onClose();
                     }}
-                    className={`flex w-full items-center justify-between rounded-[18px] border px-4 py-3 text-left transition ${
+                    className={`flex w-full items-center justify-between rounded-[10px] px-4 py-3 text-left transition ${
                       isSelected
                         ? "border-zinc-600 bg-zinc-900 text-zinc-100"
                         : "border-zinc-800 bg-zinc-950/70 text-zinc-300 hover:border-zinc-700 hover:bg-zinc-900"
@@ -159,7 +159,7 @@ export function ChatOptionSelectorModal({
               })}
             </div>
           ) : (
-            <div className="rounded-[20px] border border-zinc-800 bg-zinc-950/70 px-4 py-5 text-center">
+            <div className="rounded-[10px] bg-zinc-950/70 px-4 py-5 text-center">
               <p className="text-sm font-medium text-zinc-100">{emptyStateTitle}</p>
               {emptyStateDescription && (
                 <p className="mt-1 text-xs leading-5 text-zinc-500">{emptyStateDescription}</p>
@@ -168,7 +168,7 @@ export function ChatOptionSelectorModal({
                 <Link
                   href={settingsHref}
                   onClick={onClose}
-                  className="mt-4 inline-flex rounded-full border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-800"
+                  className="mt-4 inline-flex rounded-[10px] bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
                 >
                   Open Settings
                 </Link>
