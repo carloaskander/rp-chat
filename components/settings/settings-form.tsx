@@ -229,7 +229,7 @@ export function SettingsForm({ initialTab }: SettingsFormProps) {
                     <button
                       type="button"
                       onClick={() => void signOut()}
-                      className="mt-4 inline-flex items-center rounded-[10px] px-4 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-900/70 hover:text-zinc-100"
+                      className="mt-4 inline-flex items-center rounded-[10px] bg-zinc-900 px-4 py-2 text-sm font-medium text-rose-400 transition hover:bg-zinc-800 hover:text-rose-300"
                     >
                       Log out
                     </button>
