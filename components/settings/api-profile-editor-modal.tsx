@@ -23,7 +23,7 @@ const providerOptions = [
 ];
 
 const fieldClassName =
-  "w-full rounded-[10px] bg-zinc-900 px-3 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500";
+  "h-11 w-full rounded-[8px] bg-zinc-900 px-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-500";
 
 export function ApiProfileEditorModal({
   open,
@@ -139,7 +139,7 @@ export function ApiProfileEditorModal({
               <select
                 value={provider}
                 onChange={(event) => setProvider(event.target.value)}
-                className={`${fieldClassName} appearance-none pr-10`}
+                className={`${fieldClassName} appearance-none pr-12 leading-none`}
               >
                 {providerOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -147,7 +147,9 @@ export function ApiProfileEditorModal({
                   </option>
                 ))}
               </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+              <div className="pointer-events-none absolute inset-y-1 right-1 flex items-center rounded-[8px] bg-zinc-800/90 px-2 text-zinc-400">
+                <ChevronDown className="h-4 w-4" />
+              </div>
             </div>
           </div>
 
@@ -171,7 +173,7 @@ export function ApiProfileEditorModal({
                 <select
                   value={model}
                   onChange={(event) => setModel(event.target.value)}
-                  className={`${fieldClassName} appearance-none pr-10`}
+                  className={`${fieldClassName} appearance-none pr-12 leading-none`}
                 >
                   <option value="">Select model</option>
                   {models.map((modelId) => (
@@ -180,7 +182,9 @@ export function ApiProfileEditorModal({
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                <div className="pointer-events-none absolute inset-y-1 right-1 flex items-center rounded-[8px] bg-zinc-800/90 px-2 text-zinc-400">
+                  <ChevronDown className="h-4 w-4" />
+                </div>
               </div>
             ) : (
               <input
@@ -207,7 +211,7 @@ export function ApiProfileEditorModal({
           </div>
         </div>
 
-        <div className="mt-6 flex items-center justify-end gap-2">
+        <div className="mt-8 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onCancel}
