@@ -163,6 +163,7 @@ export function ChatApp() {
     DEFAULT_CHARACTER_PRESETS,
   );
   const [apiProfiles, setApiProfiles] = useState<ApiProfile[]>(() => chatAppCache.apiProfiles);
+  const [hasLoadedApiProfiles, setHasLoadedApiProfiles] = useState(() => chatAppCache.hasLoadedProfiles);
 
   const [activeView, setActiveView] = useState<SidebarView>("chat");
   const [chatOptionSelector, setChatOptionSelector] = useState<ChatOptionSelectorState | null>(null);
@@ -233,6 +234,7 @@ export function ChatApp() {
       setChats([]);
       setActiveChatId(null);
       setApiProfiles([]);
+      setHasLoadedApiProfiles(false);
       setChatMessagePagination({});
       setLoadedMessageChatIds({});
       setChatOptionSelector(null);
@@ -251,11 +253,13 @@ export function ChatApp() {
   useEffect(() => {
     if (!authResolved || !resolvedUserId || !session?.access_token) {
       setApiProfiles([]);
+      setHasLoadedApiProfiles(false);
       return;
     }
 
     if (chatAppCache.userId === resolvedUserId && chatAppCache.hasLoadedProfiles) {
       setApiProfiles(chatAppCache.apiProfiles);
+      setHasLoadedApiProfiles(true);
       return;
     }
 
@@ -274,6 +278,7 @@ export function ChatApp() {
 
       if (error) {
         console.error("Failed to load API profiles from Supabase.", error);
+        setHasLoadedApiProfiles(true);
         return;
       }
 
@@ -286,6 +291,7 @@ export function ChatApp() {
       }));
 
       setApiProfiles(nextProfiles);
+      setHasLoadedApiProfiles(true);
       chatAppCache.hasLoadedProfiles = true;
     };
 
@@ -1362,6 +1368,10 @@ export function ChatApp() {
 
   const handleOpenApiProfileSelector = (chatId: string, anchorRect: SelectorAnchorRect | null = null) => {
     if (!requireAuth()) {
+      return;
+    }
+
+    if (!hasLoadedApiProfiles) {
       return;
     }
 
