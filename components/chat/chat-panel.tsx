@@ -808,7 +808,6 @@ export function ChatPanel({
             <button
               type="button"
               onClick={(event) => onOpenApiProfileSelector(getAnchorRect(event.currentTarget))}
-              disabled={!chat}
               className={controlButtonClassName}
             >
               <Cpu className="h-3.5 w-3.5 shrink-0" />
@@ -821,7 +820,6 @@ export function ChatPanel({
               onClick={(event) =>
                 onOpenCharacterPresetSelector(getAnchorRect(event.currentTarget))
               }
-              disabled={!chat}
               className={controlButtonClassName}
             >
               <UserRound className="h-3.5 w-3.5 shrink-0" />
@@ -834,7 +832,6 @@ export function ChatPanel({
               onClick={(event) =>
                 onOpenInstructionPresetSelector(getAnchorRect(event.currentTarget))
               }
-              disabled={!chat}
               className={controlButtonClassName}
             >
               <BookText className="h-3.5 w-3.5 shrink-0" />

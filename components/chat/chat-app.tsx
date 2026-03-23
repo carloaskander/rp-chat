@@ -537,14 +537,14 @@ export function ChatApp() {
       ].join(" · ");
   const isActiveChatThinking = Boolean(activeChat && thinkingChatId === activeChat.id);
 
-  const handleNewChat = async () => {
+  const createChatRecord = useCallback(async (): Promise<ChatSession | null> => {
     if (!requireAuth()) {
-      return;
+      return null;
     }
 
     if (!user) {
       console.error("Cannot create chat: no authenticated user.");
-      return;
+      return null;
     }
 
     const { data, error } = await supabase
@@ -559,7 +559,7 @@ export function ChatApp() {
 
     if (error || !data) {
       console.error("Failed to create chat in Supabase.", error);
-      return;
+      return null;
     }
 
     const createdAt = Date.parse(data.created_at);
@@ -582,6 +582,12 @@ export function ChatApp() {
     setActiveChatId(newChat.id);
     setActiveView("chat");
     setIsSidebarOpen(false);
+
+    return newChat;
+  }, [requireAuth, user]);
+
+  const handleNewChat = async () => {
+    await createChatRecord();
   };
 
   const handleViewChange = (view: SidebarView) => {
@@ -1366,7 +1372,19 @@ export function ChatApp() {
     );
   };
 
-  const handleOpenApiProfileSelector = (chatId: string, anchorRect: SelectorAnchorRect | null = null) => {
+  const resolveSelectorChatId = useCallback(async (chatId: string | null) => {
+    if (chatId) {
+      return chatId;
+    }
+
+    const createdChat = await createChatRecord();
+    return createdChat?.id ?? null;
+  }, [createChatRecord]);
+
+  const handleOpenApiProfileSelector = async (
+    chatId: string | null,
+    anchorRect: SelectorAnchorRect | null = null,
+  ) => {
     if (!requireAuth()) {
       return;
     }
@@ -1380,29 +1398,44 @@ export function ChatApp() {
       return;
     }
 
-    setChatOptionSelector({ chatId, kind: "apiProfile", anchorRect });
+    const resolvedChatId = await resolveSelectorChatId(chatId);
+    if (!resolvedChatId) {
+      return;
+    }
+
+    setChatOptionSelector({ chatId: resolvedChatId, kind: "apiProfile", anchorRect });
   };
 
-  const handleOpenCharacterPresetSelector = (
-    chatId: string,
+  const handleOpenCharacterPresetSelector = async (
+    chatId: string | null,
     anchorRect: SelectorAnchorRect | null = null,
   ) => {
     if (!requireAuth()) {
       return;
     }
 
-    setChatOptionSelector({ chatId, kind: "characterPreset", anchorRect });
+    const resolvedChatId = await resolveSelectorChatId(chatId);
+    if (!resolvedChatId) {
+      return;
+    }
+
+    setChatOptionSelector({ chatId: resolvedChatId, kind: "characterPreset", anchorRect });
   };
 
-  const handleOpenInstructionPresetSelector = (
-    chatId: string,
+  const handleOpenInstructionPresetSelector = async (
+    chatId: string | null,
     anchorRect: SelectorAnchorRect | null = null,
   ) => {
     if (!requireAuth()) {
       return;
     }
 
-    setChatOptionSelector({ chatId, kind: "instructionPreset", anchorRect });
+    const resolvedChatId = await resolveSelectorChatId(chatId);
+    if (!resolvedChatId) {
+      return;
+    }
+
+    setChatOptionSelector({ chatId: resolvedChatId, kind: "instructionPreset", anchorRect });
   };
 
   return (
@@ -1494,19 +1527,13 @@ export function ChatApp() {
               onEditMessage={handleEditMessage}
               onActivateMessageVersion={handleActivateMessageVersion}
               onOpenApiProfileSelector={(anchorRect) => {
-                if (activeChat) {
-                  handleOpenApiProfileSelector(activeChat.id, anchorRect ?? null);
-                }
+                void handleOpenApiProfileSelector(activeChat?.id ?? null, anchorRect ?? null);
               }}
               onOpenCharacterPresetSelector={(anchorRect) => {
-                if (activeChat) {
-                  handleOpenCharacterPresetSelector(activeChat.id, anchorRect ?? null);
-                }
+                void handleOpenCharacterPresetSelector(activeChat?.id ?? null, anchorRect ?? null);
               }}
               onOpenInstructionPresetSelector={(anchorRect) => {
-                if (activeChat) {
-                  handleOpenInstructionPresetSelector(activeChat.id, anchorRect ?? null);
-                }
+                void handleOpenInstructionPresetSelector(activeChat?.id ?? null, anchorRect ?? null);
               }}
               onRequireAuth={requireAuth}
             />
