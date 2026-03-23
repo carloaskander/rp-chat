@@ -160,7 +160,7 @@ export function Sidebar({
   };
 
   const sidebarButtonClassName = (isActive: boolean) =>
-    `flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[15px] transition sm:py-2.5 sm:text-sm ${
+    `flex w-full items-center gap-3 rounded-[10px] px-3 py-3 text-left text-[15px] transition sm:py-2.5 sm:text-sm ${
       isActive
         ? "bg-zinc-900/80 text-zinc-100"
         : "text-zinc-400 hover:bg-zinc-900/70 hover:text-zinc-200"
@@ -212,7 +212,7 @@ export function Sidebar({
         </h2>
         <div className="h-full space-y-1 overflow-y-auto pr-1">
           {chats.length === 0 && (
-            <p className="rounded-xl bg-zinc-900/60 px-3 py-2 text-xs text-zinc-500">
+            <p className="rounded-[10px] bg-zinc-900/60 px-3 py-2 text-xs text-zinc-500">
               No chats yet.
             </p>
           )}
@@ -222,7 +222,7 @@ export function Sidebar({
             return (
               <div
                 key={chat.id}
-                className={`group flex items-start gap-1 rounded-xl px-1 py-1 transition ${
+                className={`group flex items-start gap-1 rounded-[10px] px-1 py-1 transition ${
                   isActive ? "bg-zinc-800/90 text-zinc-100" : "text-zinc-400 hover:bg-zinc-900/70"
                 }`}
               >
@@ -267,8 +267,8 @@ export function Sidebar({
 
       <div className="relative border-t border-zinc-900/90 px-3 pb-3 pt-3" ref={accountMenuRef}>
         {isAccountMenuOpen && (
-          <div className="absolute inset-x-3 bottom-[calc(100%+0.35rem)] rounded-xl bg-zinc-950/98 p-2 shadow-2xl shadow-black/40 backdrop-blur">
-            <div className="flex items-center gap-3 rounded-xl px-3 py-3">
+          <div className="absolute inset-x-3 bottom-[calc(100%+0.35rem)] rounded-[10px] bg-zinc-950/98 p-2 shadow-2xl shadow-black/40 backdrop-blur">
+            <div className="flex items-center gap-3 rounded-[10px] px-3 py-3">
               {renderAvatar("h-11 w-11")}
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-zinc-100">
@@ -285,7 +285,7 @@ export function Sidebar({
             <Link
               href="/settings?section=account"
               onClick={() => setIsAccountMenuOpen(false)}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+              className="flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
             >
               <CircleUserRound className="h-4 w-4" />
               <span>Account</span>
@@ -294,7 +294,7 @@ export function Sidebar({
             <Link
               href="/settings?section=api"
               onClick={() => setIsAccountMenuOpen(false)}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+              className="flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
             >
               <Settings2 className="h-4 w-4" />
               <span>API Profiles</span>
@@ -303,7 +303,7 @@ export function Sidebar({
             <Link
               href="/settings?section=appearance"
               onClick={() => setIsAccountMenuOpen(false)}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+              className="flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
             >
               <Palette className="h-4 w-4" />
               <span>Appearance</span>
@@ -312,7 +312,7 @@ export function Sidebar({
             <Link
               href="/settings?section=about"
               onClick={() => setIsAccountMenuOpen(false)}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+              className="flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
             >
               <Info className="h-4 w-4" />
               <span>About</span>
@@ -321,7 +321,7 @@ export function Sidebar({
             <Link
               href="/settings"
               onClick={() => setIsAccountMenuOpen(false)}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+              className="flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
             >
               <Settings className="h-4 w-4" />
               <span>All Settings</span>
@@ -334,7 +334,7 @@ export function Sidebar({
                   setIsAccountMenuOpen(false);
                   onRequireAuth();
                 }}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+                className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
               >
                 <CircleUserRound className="h-4 w-4" />
                 <span>Sign in</span>
@@ -346,7 +346,7 @@ export function Sidebar({
                   setIsAccountMenuOpen(false);
                   void signOut();
                 }}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+                className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Log out</span>
@@ -358,7 +358,7 @@ export function Sidebar({
         <button
           type="button"
           onClick={() => setIsAccountMenuOpen((prev) => !prev)}
-          className="flex w-full items-center gap-3 rounded-xl bg-zinc-900/80 px-3 py-3 text-left transition hover:border-zinc-700 hover:bg-zinc-900"
+          className="flex w-full items-center gap-3 rounded-[10px] bg-zinc-900/80 px-3 py-3 text-left transition hover:border-zinc-700 hover:bg-zinc-900"
         >
           {renderAvatar("h-10 w-10")}
           <div className="min-w-0 flex-1">
