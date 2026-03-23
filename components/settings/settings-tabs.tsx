@@ -46,7 +46,7 @@ export function SettingsTabs({ activeTab, onTabChange }: SettingsTabsProps) {
             key={tab.key}
             type="button"
             onClick={() => onTabChange(tab.key)}
-            className={`flex w-full items-start gap-3 rounded-[10px] px-4 py-3 text-left transition ${
+            className={`flex w-full items-start gap-3 rounded-[8px] px-4 py-3 text-left transition ${
               isActive
                 ? "bg-zinc-900/90 text-zinc-100"
                 : "text-zinc-400 hover:bg-zinc-900/70 hover:text-zinc-200"
