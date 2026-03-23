@@ -334,7 +334,7 @@ export function Sidebar({
                   setIsAccountMenuOpen(false);
                   onRequireAuth();
                 }}
-                className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm text-rose-400 transition hover:bg-zinc-900 hover:text-rose-300"
+                className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
               >
                 <CircleUserRound className="h-4 w-4" />
                 <span>Sign in</span>
@@ -346,7 +346,7 @@ export function Sidebar({
                   setIsAccountMenuOpen(false);
                   void signOut();
                 }}
-                className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-100"
+                className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm text-rose-400 transition hover:bg-zinc-900 hover:text-rose-300"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Log out</span>
