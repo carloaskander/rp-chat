@@ -6,6 +6,7 @@ import { validateApiProfile } from "@/lib/profile-validation";
 import { ApiProfile } from "@/types/settings";
 
 import { ApiProfileEditorModal } from "./api-profile-editor-modal";
+import { ProviderBrandIcon } from "../ui/provider-brand-icon";
 
 interface ApiProfileListProps {
   profiles: ApiProfile[];
@@ -109,8 +110,8 @@ export function ApiProfileList({
               className="flex items-center justify-between rounded-none px-4 py-3 transition hover:bg-zinc-900/30"
             >
               <div className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-none text-[11px] font-semibold text-zinc-500">
-                    API
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-zinc-900 text-zinc-200">
+                    <ProviderBrandIcon provider={profile.provider} className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-zinc-100">{profile.name}</p>
