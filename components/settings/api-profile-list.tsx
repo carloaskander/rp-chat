@@ -1,5 +1,6 @@
 "use client";
 
+import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { validateApiProfile } from "@/lib/profile-validation";
@@ -75,7 +76,7 @@ export function ApiProfileList({
   return (
     <section className="px-5 pb-6">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-base font-medium text-zinc-100">API Profiles</h2>
+        <h2 className="text-sm font-medium text-zinc-100">API Profiles</h2>
         <button
           type="button"
           onClick={() => {
@@ -86,7 +87,7 @@ export function ApiProfileList({
             setIsCreating(true);
             setEditingProfileId(null);
           }}
-          className={`rounded-[10px] px-3 py-1.5 text-sm font-medium transition ${
+          className={`rounded-[10px] px-3 py-1.5 text-xs font-medium transition ${
             isPreviewMode
               ? "bg-zinc-900/60 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
               : "bg-zinc-900/80 text-zinc-200 hover:bg-zinc-900 hover:text-zinc-100"
@@ -113,22 +114,22 @@ export function ApiProfileList({
             const isValidating = validatingProfileId === profile.id;
 
             return (
-            <article
-              key={profile.id}
-              className="flex items-center justify-between rounded-[10px] px-4 py-3 transition hover:bg-zinc-900/30"
-            >
-              <div className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-zinc-900 text-zinc-200">
-                    <ProviderBrandIcon provider={profile.provider} className="h-4 w-4" />
+              <article
+                key={profile.id}
+                className="flex items-center justify-between rounded-[10px] px-3 py-2.5 transition hover:bg-zinc-900/30"
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-zinc-900 text-zinc-200">
+                    <ProviderBrandIcon provider={profile.provider} className="h-3.5 w-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-zinc-100">{profile.name}</p>
-                    <p className="truncate text-xs text-zinc-400">
+                    <p className="truncate text-[13px] font-medium text-zinc-100">{profile.name}</p>
+                    <p className="truncate text-[11px] text-zinc-400">
                       {profile.provider} - {profile.model || "No model"}
                     </p>
                     {validation && (
                       <p
-                        className={`mt-1 text-xs ${validation.ok ? "text-emerald-400" : "text-rose-400"}`}
+                        className={`mt-1 text-[11px] ${validation.ok ? "text-emerald-400" : "text-rose-400"}`}
                       >
                         {validation.message}
                       </p>
@@ -136,7 +137,7 @@ export function ApiProfileList({
                   </div>
                 </div>
 
-                <div className="ml-3 flex items-center gap-2">
+                <div className="ml-3 flex items-center gap-1.5 md:gap-1">
                   <button
                     type="button"
                     onClick={() => {
@@ -147,7 +148,7 @@ export function ApiProfileList({
                       void handleValidateProfile(profile);
                     }}
                     disabled={isValidating}
-                    className="rounded-[10px] px-2.5 py-1 text-xs text-zinc-300 transition hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-[10px] px-2 py-1 text-[11px] text-zinc-300 transition hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isValidating ? "Validating..." : "Validate"}
                   </button>
@@ -161,9 +162,12 @@ export function ApiProfileList({
                       setIsCreating(false);
                       setEditingProfileId(profile.id);
                     }}
-                    className="rounded-[10px] px-2.5 py-1 text-xs text-zinc-300 transition hover:text-zinc-100"
+                    className="rounded-[10px] px-2 py-1 text-[11px] text-zinc-300 transition hover:text-zinc-100"
+                    aria-label={`Edit ${profile.name}`}
+                    title={`Edit ${profile.name}`}
                   >
-                    Edit
+                    <span className="hidden lg:inline">Edit</span>
+                    <Pencil className="h-3.5 w-3.5 lg:hidden" />
                   </button>
                   <button
                     type="button"
@@ -175,9 +179,14 @@ export function ApiProfileList({
                       void handleDeleteProfile(profile.id);
                     }}
                     disabled={deletingProfileId === profile.id}
-                    className="rounded-[10px] px-2.5 py-1 text-xs text-rose-400 transition hover:text-rose-300"
+                    className="rounded-[10px] px-2 py-1 text-[11px] text-rose-400 transition hover:text-rose-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label={deletingProfileId === profile.id ? `Deleting ${profile.name}` : `Delete ${profile.name}`}
+                    title={`Delete ${profile.name}`}
                   >
-                    {deletingProfileId === profile.id ? "Deleting..." : "Delete"}
+                    <span className="hidden lg:inline">
+                      {deletingProfileId === profile.id ? "Deleting..." : "Delete"}
+                    </span>
+                    <Trash2 className="h-3.5 w-3.5 lg:hidden" />
                   </button>
                 </div>
               </article>
@@ -185,11 +194,7 @@ export function ApiProfileList({
           })}
         </div>
       )}
-      {actionError && (
-        <p className="mt-3 text-sm text-rose-400">
-          {actionError}
-        </p>
-      )}
+      {actionError && <p className="mt-3 text-sm text-rose-400">{actionError}</p>}
 
       <ApiProfileEditorModal
         key={isCreating ? "new-api-profile" : editingProfile?.id ?? "closed"}
