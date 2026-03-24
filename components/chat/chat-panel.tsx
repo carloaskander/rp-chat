@@ -8,12 +8,11 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Cpu,
   Pencil,
-  UserRound,
   X,
 } from "lucide-react";
 
+import { ProviderBrandIcon } from "@/components/ui/provider-brand-icon";
 import { ChatMessage, ChatSession } from "@/types/chat";
 
 import { SelectorAnchorRect } from "./chat-option-selector-modal";
@@ -22,6 +21,7 @@ interface ChatPanelProps {
   chat: ChatSession | null;
   modelLabel: string;
   apiProfileLabel: string;
+  apiProfileProvider: string;
   characterPresetLabel: string;
   instructionPresetLabel: string;
   inputDisabled: boolean;
@@ -58,6 +58,16 @@ function isSummaryNotice(content: string): boolean {
 
 function formatSummaryNotice(content: string): string {
   return content.replace(SUMMARY_NOTICE_PREFIX, "").trim();
+}
+
+function formatCompactCharacterLabel(label: string): string {
+  const trimmed = label.trim();
+
+  if (trimmed.length <= 4) {
+    return trimmed || "Char";
+  }
+
+  return `${trimmed.slice(0, 4)}...`;
 }
 
 interface SummaryNoticeProps {
@@ -171,6 +181,7 @@ export function ChatPanel({
   chat,
   modelLabel,
   apiProfileLabel,
+  apiProfileProvider,
   characterPresetLabel,
   instructionPresetLabel,
   inputDisabled,
@@ -480,7 +491,7 @@ export function ChatPanel({
   };
 
   const controlButtonClassName =
-    "inline-flex min-w-0 items-center gap-2 px-1 py-1 text-left text-xs text-zinc-400 transition hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-60";
+    "inline-flex w-auto max-w-full items-center gap-1.5 px-1 py-1 text-left text-xs text-zinc-400 transition hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
     <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
@@ -810,9 +821,11 @@ export function ChatPanel({
               onClick={(event) => onOpenApiProfileSelector(getAnchorRect(event.currentTarget))}
               className={controlButtonClassName}
             >
-              <Cpu className="h-3.5 w-3.5 shrink-0" />
-              <span className="min-w-0 flex-1 truncate">{apiProfileLabel}</span>
-              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
+              <span className="hidden md:inline">API Profile</span>
+              <span className="md:hidden">
+                <ProviderBrandIcon provider={apiProfileProvider} className="h-3.5 w-3.5 shrink-0" />
+              </span>
+              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline" />
             </button>
 
             <button
@@ -822,9 +835,9 @@ export function ChatPanel({
               }
               className={controlButtonClassName}
             >
-              <UserRound className="h-3.5 w-3.5 shrink-0" />
-              <span className="min-w-0 flex-1 truncate">{characterPresetLabel}</span>
-              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
+              <span className="hidden md:inline">Character Preset</span>
+              <span className="inline md:hidden">{formatCompactCharacterLabel(characterPresetLabel)}</span>
+              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline" />
             </button>
 
             <button
@@ -834,9 +847,9 @@ export function ChatPanel({
               }
               className={controlButtonClassName}
             >
-              <BookText className="h-3.5 w-3.5 shrink-0" />
-              <span className="min-w-0 flex-1 truncate">{instructionPresetLabel}</span>
-              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
+              <span className="hidden md:inline">Instruction Preset</span>
+              <BookText className="h-3.5 w-3.5 shrink-0 md:hidden" />
+              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline" />
             </button>
           </div>
         </div>

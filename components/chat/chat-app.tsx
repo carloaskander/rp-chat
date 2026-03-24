@@ -1455,6 +1455,7 @@ export function ChatApp() {
               chat={activeChat}
               modelLabel={activeChatModelLabel}
               apiProfileLabel={activeChatApiProfile?.name ?? "API profile"}
+              apiProfileProvider={activeChatApiProfile?.provider ?? ""}
               characterPresetLabel={activeCharacterPreset?.name ?? "Character preset"}
               instructionPresetLabel={activeInstructionPreset?.name ?? "Instruction preset"}
               inputDisabled={activeChatInputLocked}
