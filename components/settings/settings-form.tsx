@@ -232,7 +232,7 @@ export function SettingsForm({ initialTab, startInDetail = false }: SettingsForm
               <button
                 type="button"
                 onClick={() => setIsMobileDetailOpen(false)}
-                className="inline-flex items-center gap-2 rounded-[10px] px-2 py-2 text-sm font-medium text-zinc-400 transition hover:bg-zinc-900 hover:text-zinc-100"
+                className="inline-flex items-center gap-2 text-sm font-medium text-zinc-400 transition hover:text-zinc-100"
                 aria-label="Back to settings"
               >
                 <ArrowLeft className="h-4 w-4" />
