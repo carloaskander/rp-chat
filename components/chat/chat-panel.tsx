@@ -830,7 +830,7 @@ export function ChatPanel({
               aria-label={`Character preset selector. Current selection: ${characterPresetLabel}`}
               title={characterPresetLabel}
             >
-              <span className="hidden origin-left whitespace-nowrap md:inline md:scale-100 md:text-[14px] md:leading-none">Character Preset</span>
+              <span className="hidden origin-left whitespace-nowrap md:inline md:scale-100 md:text-[14px] md:leading-none">Character</span>
               <UserRound className="h-3.5 w-3.5 shrink-0 md:hidden" />
               <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline md:h-3 md:w-3" />
             </button>
@@ -844,7 +844,7 @@ export function ChatPanel({
               aria-label={`Instruction preset selector. Current selection: ${instructionPresetLabel}`}
               title={instructionPresetLabel}
             >
-              <span className="hidden origin-left whitespace-nowrap md:inline md:scale-100 md:text-[14px] md:leading-none">Instruction Preset</span>
+              <span className="hidden origin-left whitespace-nowrap md:inline md:scale-100 md:text-[14px] md:leading-none">Instruction</span>
               <BookText className="h-3.5 w-3.5 shrink-0 md:hidden" />
               <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline md:h-3 md:w-3" />
             </button>
