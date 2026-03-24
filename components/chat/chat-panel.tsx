@@ -820,6 +820,8 @@ export function ChatPanel({
               type="button"
               onClick={(event) => onOpenApiProfileSelector(getAnchorRect(event.currentTarget))}
               className={controlButtonClassName}
+              aria-label={`API profile selector. Current selection: ${apiProfileLabel}`}
+              title={apiProfileLabel}
             >
               <span className="hidden md:inline">API Profile</span>
               <span className="md:hidden">
@@ -834,6 +836,8 @@ export function ChatPanel({
                 onOpenCharacterPresetSelector(getAnchorRect(event.currentTarget))
               }
               className={controlButtonClassName}
+              aria-label={`Character preset selector. Current selection: ${characterPresetLabel}`}
+              title={characterPresetLabel}
             >
               <span className="hidden md:inline">Character Preset</span>
               <span className="inline md:hidden">{formatCompactCharacterLabel(characterPresetLabel)}</span>
@@ -846,6 +850,8 @@ export function ChatPanel({
                 onOpenInstructionPresetSelector(getAnchorRect(event.currentTarget))
               }
               className={controlButtonClassName}
+              aria-label={`Instruction preset selector. Current selection: ${instructionPresetLabel}`}
+              title={instructionPresetLabel}
             >
               <span className="hidden md:inline">Instruction Preset</span>
               <BookText className="h-3.5 w-3.5 shrink-0 md:hidden" />
