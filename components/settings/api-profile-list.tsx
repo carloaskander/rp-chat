@@ -166,8 +166,7 @@ export function ApiProfileList({
                     aria-label={`Edit ${profile.name}`}
                     title={`Edit ${profile.name}`}
                   >
-                    <span className="hidden lg:inline">Edit</span>
-                    <Pencil className="h-3.5 w-3.5 lg:hidden" />
+                    <Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button
                     type="button"
@@ -183,10 +182,7 @@ export function ApiProfileList({
                     aria-label={deletingProfileId === profile.id ? `Deleting ${profile.name}` : `Delete ${profile.name}`}
                     title={`Delete ${profile.name}`}
                   >
-                    <span className="hidden lg:inline">
-                      {deletingProfileId === profile.id ? "Deleting..." : "Delete"}
-                    </span>
-                    <Trash2 className="h-3.5 w-3.5 lg:hidden" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </article>
