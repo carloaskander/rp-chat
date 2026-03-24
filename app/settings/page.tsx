@@ -22,9 +22,9 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
         <h1 className="text-lg font-medium tracking-tight text-zinc-100">Settings</h1>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm font-medium text-zinc-400 transition hover:text-zinc-100"
+          className="inline-flex items-center gap-2 text-base font-medium text-zinc-400 transition hover:text-zinc-100"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4.5 w-4.5" />
           <span>Home</span>
         </Link>
       </header>
