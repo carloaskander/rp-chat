@@ -716,7 +716,7 @@ export function ChatPanel({
       <form
         ref={formRef}
         onSubmit={handleSubmit}
-        className="fixed inset-x-0 z-20 shrink-0 w-full px-4 pt-2 sm:mx-auto sm:max-w-3xl sm:px-6 md:static md:px-6 md:pb-6"
+        className="fixed inset-x-0 z-20 shrink-0 w-full px-4 pt-3 sm:mx-auto sm:max-w-3xl sm:px-6 md:static md:px-6 md:pb-7"
         style={{
           bottom: keyboardInset,
           paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
@@ -752,7 +752,7 @@ export function ChatPanel({
         )}
 
         <div
-          className={`w-full max-w-full border border-zinc-800/80 bg-zinc-900/90 px-3 py-2 backdrop-blur ${
+          className={`w-full max-w-full border border-zinc-800/80 bg-zinc-900/90 px-3 py-2.5 shadow-[0_0_0_1px_rgba(24,24,27,0.18)] backdrop-blur ${
             isComposerExpanded ? "rounded-[22px]" : "rounded-[26px]"
           }`}
         >
