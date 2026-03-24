@@ -3,7 +3,7 @@
 import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 
-import { validateApiProfile } from "@/lib/profile-validation";
+import { supabase } from "@/lib/supabase";
 import { ApiProfile } from "@/types/settings";
 
 import { ApiProfileEditorModal } from "./api-profile-editor-modal";
@@ -65,12 +65,52 @@ export function ApiProfileList({
 
   const handleValidateProfile = async (profile: ApiProfile) => {
     setValidatingProfileId(profile.id);
-    const result = await validateApiProfile(profile);
-    setValidationResults((prev) => ({
-      ...prev,
-      [profile.id]: result,
-    }));
-    setValidatingProfileId(null);
+
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getSession();
+      if (authError || !authData.session?.access_token) {
+        throw new Error("Unable to resolve authenticated session.");
+      }
+
+      const response = await fetch("/api/keys/validate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authData.session.access_token}`,
+        },
+        body: JSON.stringify({
+          provider: profile.provider,
+        }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          typeof payload?.error === "string" ? payload.error : "Could not validate API profile.",
+        );
+      }
+
+      setValidationResults((prev) => ({
+        ...prev,
+        [profile.id]: {
+          ok: Boolean(payload?.ok),
+          message:
+            typeof payload?.message === "string"
+              ? payload.message
+              : "Could not validate API profile.",
+        },
+      }));
+    } catch (error) {
+      setValidationResults((prev) => ({
+        ...prev,
+        [profile.id]: {
+          ok: false,
+          message: error instanceof Error ? error.message : "Could not validate API profile.",
+        },
+      }));
+    } finally {
+      setValidatingProfileId(null);
+    }
   };
 
   return (

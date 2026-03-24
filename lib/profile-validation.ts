@@ -41,13 +41,16 @@ async function validateKimi(apiKey: string): Promise<ValidationResult> {
   return { ok: false, message: `Validation failed (${primary.status}): ${body}` };
 }
 
-export async function validateApiProfile(profile: ApiProfile): Promise<ValidationResult> {
-  const apiKey = normalizeApiKey(profile.apiKey);
+export async function validateProviderApiKey(
+  providerRaw: string,
+  rawApiKey: string,
+): Promise<ValidationResult> {
+  const apiKey = normalizeApiKey(rawApiKey);
   if (!apiKey) {
     return { ok: false, message: "API key is missing." };
   }
 
-  const provider = profile.provider.trim().toLowerCase();
+  const provider = providerRaw.trim().toLowerCase();
 
   try {
     if (provider === "openai") {
@@ -99,11 +102,15 @@ export async function validateApiProfile(profile: ApiProfile): Promise<Validatio
       return { ok: false, message: `Validation failed (${response.status}): ${body}` };
     }
 
-    return { ok: false, message: `Unsupported provider: ${profile.provider}` };
+    return { ok: false, message: `Unsupported provider: ${providerRaw}` };
   } catch (error) {
     return {
       ok: false,
       message: error instanceof Error ? error.message : "Unknown validation error.",
     };
   }
+}
+
+export async function validateApiProfile(profile: ApiProfile): Promise<ValidationResult> {
+  return validateProviderApiKey(profile.provider, profile.apiKey);
 }
