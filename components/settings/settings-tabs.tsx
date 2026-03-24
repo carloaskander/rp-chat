@@ -7,7 +7,12 @@ interface SettingsTabsProps {
   onTabChange: (tab: SettingsTab) => void;
 }
 
-const tabs: Array<{ key: SettingsTab; label: string; description: string; icon: LucideIcon }> = [
+export const settingsTabs: Array<{
+  key: SettingsTab;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+}> = [
   {
     key: "account",
     label: "Account",
@@ -37,7 +42,7 @@ const tabs: Array<{ key: SettingsTab; label: string; description: string; icon: 
 export function SettingsTabs({ activeTab, onTabChange }: SettingsTabsProps) {
   return (
     <nav className="space-y-2 px-5" aria-label="Settings sections">
-      {tabs.map((tab) => {
+      {settingsTabs.map((tab) => {
         const isActive = activeTab === tab.key;
         const Icon = tab.icon;
 

@@ -13,9 +13,8 @@ interface SettingsPageProps {
 export default async function SettingsPage({ searchParams }: SettingsPageProps) {
   const resolvedSearchParams = await searchParams;
   const requestedSection = resolvedSearchParams?.section;
-  const initialTab: SettingsTab = validSections.has(requestedSection as SettingsTab)
-    ? (requestedSection as SettingsTab)
-    : "account";
+  const hasExplicitSection = validSections.has(requestedSection as SettingsTab);
+  const initialTab: SettingsTab = hasExplicitSection ? (requestedSection as SettingsTab) : "account";
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-5 px-4 py-6 sm:px-6">
@@ -29,7 +28,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
           <span>Home</span>
         </Link>
       </header>
-      <SettingsForm key={initialTab} initialTab={initialTab} />
+      <SettingsForm key={`${initialTab}-${hasExplicitSection ? "detail" : "list"}`} initialTab={initialTab} startInDetail={hasExplicitSection} />
     </main>
   );
 }
