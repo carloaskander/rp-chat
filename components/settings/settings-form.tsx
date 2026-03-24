@@ -193,12 +193,12 @@ export function SettingsForm({ initialTab, startInDetail = false }: SettingsForm
 
   return (
     <section>
-      <div className="hidden gap-5 lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="hidden gap-5 md:grid md:grid-cols-[280px_minmax(0,1fr)]">
         <SettingsTabs activeTab={activeTab} onTabChange={setActiveTab} />
         {renderActiveContent()}
       </div>
 
-      <div className="overflow-hidden lg:hidden">
+      <div className="overflow-hidden md:hidden">
         <div
           className={`flex w-[200%] transition-transform duration-300 ease-out ${
             isMobileDetailOpen ? "-translate-x-1/2" : "translate-x-0"
