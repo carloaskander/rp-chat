@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { ArrowLeft, CircleUserRound, Info, Palette, Settings2 } from "lucide-react";
 
 import { PreviewModeNotice } from "@/components/auth/preview-mode-ui";
@@ -29,11 +29,6 @@ export function SettingsForm({ initialTab, startInDetail = false }: SettingsForm
   } = useApiProfiles();
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(startInDetail);
-
-  const activeTabMeta = useMemo(
-    () => settingsTabs.find((tab) => tab.key === activeTab) ?? settingsTabs[0],
-    [activeTab],
-  );
 
   const handlePersistApiKey = useCallback(
     async (params: { provider: string; apiKey: string }) => {
