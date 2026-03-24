@@ -233,19 +233,16 @@ export function SettingsForm({ initialTab, startInDetail = false }: SettingsForm
           </div>
 
           <div className="w-1/2 shrink-0">
-            <div className="flex items-center gap-2 px-5 py-3">
+            <div className="flex items-center gap-3 px-5 py-3">
               <button
                 type="button"
                 onClick={() => setIsMobileDetailOpen(false)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] text-zinc-400 transition hover:bg-zinc-900 hover:text-zinc-100"
+                className="inline-flex items-center gap-2 rounded-[10px] px-2 py-2 text-sm font-medium text-zinc-400 transition hover:bg-zinc-900 hover:text-zinc-100"
                 aria-label="Back to settings"
               >
                 <ArrowLeft className="h-4 w-4" />
+                <span>Back</span>
               </button>
-              <div>
-                <p className="text-sm font-medium text-zinc-100">{activeTabMeta.label}</p>
-                <p className="text-xs text-zinc-500">{activeTabMeta.description}</p>
-              </div>
             </div>
             {renderActiveContent()}
           </div>
