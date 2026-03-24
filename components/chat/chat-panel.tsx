@@ -482,7 +482,7 @@ export function ChatPanel({
   };
 
   const controlButtonClassName =
-    "inline-flex w-auto max-w-full items-center gap-1.5 px-1 py-1 text-left text-xs text-zinc-400 transition hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 md:gap-1 md:px-0.5 md:py-0 md:text-[7px] md:leading-none";
+    "inline-flex w-auto max-w-full items-center gap-1.5 px-1 py-1 text-left text-xs text-zinc-400 transition hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 md:gap-1 md:px-0.5 md:py-0";
 
   return (
     <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
@@ -814,11 +814,11 @@ export function ChatPanel({
               aria-label={`API profile selector. Current selection: ${apiProfileLabel}`}
               title={apiProfileLabel}
             >
-              <span className="hidden md:inline">API Profile</span>
+              <span className="hidden origin-left whitespace-nowrap md:inline md:scale-[0.8] md:text-[10px] md:leading-none">API Profile</span>
               <span className="md:hidden">
                 <ProviderBrandIcon provider={apiProfileProvider} className="h-3.5 w-3.5 shrink-0" />
               </span>
-              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline md:h-3 md:w-3" />
+              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline md:h-2.5 md:w-2.5" />
             </button>
 
             <button
@@ -830,9 +830,9 @@ export function ChatPanel({
               aria-label={`Character preset selector. Current selection: ${characterPresetLabel}`}
               title={characterPresetLabel}
             >
-              <span className="hidden md:inline">Character Preset</span>
+              <span className="hidden origin-left whitespace-nowrap md:inline md:scale-[0.8] md:text-[10px] md:leading-none">Character Preset</span>
               <UserRound className="h-3.5 w-3.5 shrink-0 md:hidden" />
-              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline md:h-3 md:w-3" />
+              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline md:h-2.5 md:w-2.5" />
             </button>
 
             <button
@@ -844,9 +844,9 @@ export function ChatPanel({
               aria-label={`Instruction preset selector. Current selection: ${instructionPresetLabel}`}
               title={instructionPresetLabel}
             >
-              <span className="hidden md:inline">Instruction Preset</span>
+              <span className="hidden origin-left whitespace-nowrap md:inline md:scale-[0.8] md:text-[10px] md:leading-none">Instruction Preset</span>
               <BookText className="h-3.5 w-3.5 shrink-0 md:hidden" />
-              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline md:h-3 md:w-3" />
+              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline md:h-2.5 md:w-2.5" />
             </button>
           </div>
         </div>
