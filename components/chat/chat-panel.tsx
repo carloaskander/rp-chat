@@ -482,7 +482,7 @@ export function ChatPanel({
   };
 
   const controlButtonClassName =
-    "inline-flex w-auto max-w-full items-center gap-1.5 px-1 py-1 text-left text-xs text-zinc-400 transition hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 md:gap-1 md:py-0.5 md:text-[10px]";
+    "inline-flex w-auto max-w-full items-center gap-1.5 px-1 py-1 text-left text-xs text-zinc-400 transition hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 md:gap-1 md:px-0.5 md:py-0 md:text-[9px] md:leading-none";
 
   return (
     <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
@@ -818,7 +818,7 @@ export function ChatPanel({
               <span className="md:hidden">
                 <ProviderBrandIcon provider={apiProfileProvider} className="h-3.5 w-3.5 shrink-0" />
               </span>
-              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline" />
+              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline md:h-3 md:w-3" />
             </button>
 
             <button
@@ -832,7 +832,7 @@ export function ChatPanel({
             >
               <span className="hidden md:inline">Character Preset</span>
               <UserRound className="h-3.5 w-3.5 shrink-0 md:hidden" />
-              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline" />
+              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline md:h-3 md:w-3" />
             </button>
 
             <button
@@ -846,7 +846,7 @@ export function ChatPanel({
             >
               <span className="hidden md:inline">Instruction Preset</span>
               <BookText className="h-3.5 w-3.5 shrink-0 md:hidden" />
-              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline" />
+              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline md:h-3 md:w-3" />
             </button>
           </div>
         </div>
