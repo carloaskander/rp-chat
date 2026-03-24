@@ -482,7 +482,7 @@ export function ChatPanel({
   };
 
   const controlButtonClassName =
-    "inline-flex w-auto max-w-full items-center gap-1.5 px-1 py-1 text-left text-xs text-zinc-400 transition hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-60";
+    "inline-flex w-auto max-w-full items-center gap-1.5 px-1 py-1 text-left text-xs text-zinc-400 transition hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 md:text-[11px]";
 
   return (
     <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
