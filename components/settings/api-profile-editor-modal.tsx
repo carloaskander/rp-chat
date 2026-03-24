@@ -10,6 +10,8 @@ interface ApiProfileEditorModalProps {
   open: boolean;
   title: string;
   initialValue: Omit<ApiProfile, "id">;
+  apiKeyHint?: string;
+  apiKeyPlaceholder?: string;
   onSave: (value: Omit<ApiProfile, "id">) => Promise<void> | void;
   onCancel: () => void;
 }
@@ -43,6 +45,8 @@ export function ApiProfileEditorModal({
   open,
   title,
   initialValue,
+  apiKeyHint,
+  apiKeyPlaceholder = "sk-...",
   onSave,
   onCancel,
 }: ApiProfileEditorModalProps) {
@@ -194,10 +198,11 @@ export function ApiProfileEditorModal({
               type="password"
               value={apiKey}
               onChange={(event) => setApiKey(event.target.value)}
-              placeholder="sk-..."
+              placeholder={apiKeyPlaceholder}
               className={activeFieldClassName}
               style={roundedFieldStyle}
             />
+            {apiKeyHint ? <p className="mt-2 text-xs text-zinc-500">{apiKeyHint}</p> : null}
           </div>
 
           <div>

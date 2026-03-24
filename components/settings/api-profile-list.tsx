@@ -236,13 +236,17 @@ export function ApiProfileList({
         key={isCreating ? "new-api-profile" : editingProfile?.id ?? "closed"}
         open={isModalOpen}
         title={isCreating ? "New API Profile" : "Edit API Profile"}
+        apiKeyPlaceholder={isCreating ? "sk-..." : "Leave blank to keep current key"}
+        apiKeyHint={
+          isCreating ? undefined : "Leave this blank to keep the current saved key. Enter a new key only if you want to replace it."
+        }
         initialValue={
           editingProfile
             ? {
                 name: editingProfile.name,
                 provider: editingProfile.provider,
                 model: editingProfile.model,
-                apiKey: editingProfile.apiKey,
+                apiKey: "",
               }
             : emptyDraft
         }
@@ -259,10 +263,18 @@ export function ApiProfileList({
             await onUpdateProfile(editingProfile.id, value);
           }
 
-          await onPersistApiKey({
-            provider: value.provider,
-            apiKey: value.apiKey,
-          });
+          const trimmedApiKey = value.apiKey.trim();
+
+          if (editingProfile && editingProfile.provider !== value.provider && !trimmedApiKey) {
+            throw new Error("Enter a new API key when changing provider.");
+          }
+
+          if (trimmedApiKey) {
+            await onPersistApiKey({
+              provider: value.provider,
+              apiKey: trimmedApiKey,
+            });
+          }
 
           setIsCreating(false);
           setEditingProfileId(null);
