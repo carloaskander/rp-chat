@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Pencil,
+  UserRound,
   X,
 } from "lucide-react";
 
@@ -58,16 +59,6 @@ function isSummaryNotice(content: string): boolean {
 
 function formatSummaryNotice(content: string): string {
   return content.replace(SUMMARY_NOTICE_PREFIX, "").trim();
-}
-
-function formatCompactCharacterLabel(label: string): string {
-  const trimmed = label.trim();
-
-  if (trimmed.length <= 4) {
-    return trimmed || "Char";
-  }
-
-  return `${trimmed.slice(0, 4)}...`;
 }
 
 interface SummaryNoticeProps {
@@ -840,7 +831,7 @@ export function ChatPanel({
               title={characterPresetLabel}
             >
               <span className="hidden md:inline">Character Preset</span>
-              <span className="inline md:hidden">{formatCompactCharacterLabel(characterPresetLabel)}</span>
+              <UserRound className="h-3.5 w-3.5 shrink-0 md:hidden" />
               <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline" />
             </button>
 
