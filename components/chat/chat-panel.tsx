@@ -482,7 +482,7 @@ export function ChatPanel({
   };
 
   const controlButtonClassName =
-    "inline-flex w-auto max-w-full items-center gap-1.5 px-1 py-1 text-left text-xs text-zinc-400 transition hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 md:gap-1 md:px-0.5 md:py-0";
+    "inline-flex min-h-9 w-auto max-w-full items-center gap-2 rounded-[10px] px-2.5 py-1.5 text-left text-xs text-zinc-400 transition hover:bg-zinc-900/60 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 md:min-h-0 md:gap-1 md:rounded-none md:px-0.5 md:py-0 md:hover:bg-transparent";
 
   return (
     <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
@@ -806,7 +806,7 @@ export function ChatPanel({
             </button>
           </div>
 
-          <div className="mt-2 flex flex-wrap items-center gap-2 px-1">
+          <div className="mt-2.5 flex flex-wrap items-center gap-2.5 px-1">
             <button
               type="button"
               onClick={(event) => onOpenApiProfileSelector(getAnchorRect(event.currentTarget))}
@@ -816,7 +816,7 @@ export function ChatPanel({
             >
               <span className="hidden origin-left whitespace-nowrap md:inline md:scale-100 md:text-[14px] md:leading-none">API Profile</span>
               <span className="md:hidden">
-                <ProviderBrandIcon provider={apiProfileProvider} className="h-3.5 w-3.5 shrink-0" />
+                <ProviderBrandIcon provider={apiProfileProvider} className="h-4 w-4 shrink-0" />
               </span>
               <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline md:h-3 md:w-3" />
             </button>
@@ -831,7 +831,7 @@ export function ChatPanel({
               title={characterPresetLabel}
             >
               <span className="hidden origin-left whitespace-nowrap md:inline md:scale-100 md:text-[14px] md:leading-none">Character</span>
-              <UserRound className="h-3.5 w-3.5 shrink-0 md:hidden" />
+              <UserRound className="h-4 w-4 shrink-0 md:hidden" />
               <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline md:h-3 md:w-3" />
             </button>
 
@@ -845,7 +845,7 @@ export function ChatPanel({
               title={instructionPresetLabel}
             >
               <span className="hidden origin-left whitespace-nowrap md:inline md:scale-100 md:text-[14px] md:leading-none">Instruction</span>
-              <BookText className="h-3.5 w-3.5 shrink-0 md:hidden" />
+              <BookText className="h-4 w-4 shrink-0 md:hidden" />
               <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 md:inline md:h-3 md:w-3" />
             </button>
           </div>

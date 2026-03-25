@@ -133,13 +133,15 @@ export function ApiProfileEditorModal({
     : "mt-8 flex items-center justify-end gap-2";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+    <div className="fixed inset-0 z-50 flex items-end bg-black/60 sm:items-center sm:justify-center sm:p-4">
       <button type="button" aria-label="Close API profile editor" onClick={onCancel} className="absolute inset-0" />
       <form
         key={`${title}-${initialValue.name}-${initialValue.provider}-${initialValue.model}`}
         onSubmit={handleSubmit}
-        className="relative z-10 w-full max-w-xl rounded-[10px] bg-zinc-950 p-5 shadow-2xl shadow-black/40 sm:p-6"
+        className="relative z-10 flex max-h-[min(92vh,48rem)] w-full flex-col overflow-hidden rounded-t-[28px] bg-zinc-950 p-4 shadow-2xl shadow-black/40 sm:max-h-[min(90vh,42rem)] sm:max-w-xl sm:rounded-[10px] sm:p-6"
       >
+        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-zinc-700 sm:hidden" />
+
         <div className="flex items-start justify-between gap-3">
           <div>
             <h3 className="text-base font-medium text-zinc-100">{title}</h3>
@@ -155,7 +157,7 @@ export function ApiProfileEditorModal({
           </button>
         </div>
 
-        <div className="mt-5 space-y-4">
+        <div className="mt-5 min-h-0 flex-1 space-y-4 overflow-y-auto pr-0.5">
           <div>
             <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-zinc-400">
               Profile Name
