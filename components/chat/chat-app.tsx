@@ -870,13 +870,13 @@ export function ChatApp() {
         router.push("/settings");
         return;
       }
-      setChatSettingsChatId(activeChatId);
+      void handleOpenApiProfileSelector(activeChatId, null);
       return;
     }
 
     const selectedProfile = apiProfiles.find((profile) => profile.id === targetChat.apiProfileId);
     if (!selectedProfile || !selectedProfile.provider.trim() || !selectedProfile.model.trim()) {
-      setChatSettingsChatId(activeChatId);
+      void handleOpenApiProfileSelector(activeChatId, null);
       return;
     }
 
@@ -916,13 +916,13 @@ export function ChatApp() {
         router.push("/settings");
         return;
       }
-      setChatSettingsChatId(activeChatId);
+      void handleOpenApiProfileSelector(activeChatId, null);
       return;
     }
 
     const selectedProfile = apiProfiles.find((profile) => profile.id === targetChat.apiProfileId);
     if (!selectedProfile || !selectedProfile.provider.trim() || !selectedProfile.model.trim()) {
-      setChatSettingsChatId(activeChatId);
+      void handleOpenApiProfileSelector(activeChatId, null);
       return;
     }
 
