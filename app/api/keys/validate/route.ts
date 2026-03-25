@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 import { validateProviderApiKey } from "@/lib/profile-validation";
-import { getUserProviderApiKey } from "@/lib/server/user-api-key";
+import { getUserProviderApiKey, type UserApiKeyLookupClient } from "@/lib/server/user-api-key";
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
@@ -61,8 +61,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Provider is required." }, { status: 400 });
     }
 
+    const keyLookupClient = supabase as UserApiKeyLookupClient;
+
     const { apiKey, error: apiKeyError } = await getUserProviderApiKey({
-      supabase,
+      supabase: keyLookupClient,
       userId,
       provider,
     });
