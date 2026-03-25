@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, Brain, Globe, MoonStar, Sparkles } from "lucide-react";
+import { Bot, Brain, MoonStar, Rocket, Sparkles } from "lucide-react";
 
 interface ProviderBrandIconProps {
   provider: string;
@@ -34,7 +34,7 @@ export function ProviderBrandIcon({ provider, className }: ProviderBrandIconProp
   }
 
   if (canonicalProvider === "xai") {
-    return <Globe className={baseClassName} aria-hidden="true" />;
+    return <Rocket className={baseClassName} aria-hidden="true" />;
   }
 
   if (canonicalProvider === "moonshot") {
