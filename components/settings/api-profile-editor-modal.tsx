@@ -138,7 +138,7 @@ export function ApiProfileEditorModal({
       <form
         key={`${title}-${initialValue.name}-${initialValue.provider}-${initialValue.model}`}
         onSubmit={handleSubmit}
-        className="relative z-10 flex w-[min(100%,42rem)] flex-col overflow-hidden rounded-t-[28px] bg-zinc-950 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 shadow-2xl shadow-black/40 max-h-[calc(100dvh-1rem)] sm:max-h-[min(90dvh,42rem)] sm:rounded-[10px] sm:px-6 sm:pb-6 sm:pt-6"
+        className="relative z-10 flex w-full flex-col overflow-hidden rounded-t-[28px] bg-zinc-950 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 shadow-2xl shadow-black/40 max-h-[calc(100dvh-1rem)] sm:w-[42rem] sm:max-w-[calc(100vw-2rem)] sm:max-h-[min(90dvh,42rem)] sm:rounded-[10px] sm:px-6 sm:pb-6 sm:pt-6"
       >
         <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-zinc-700 sm:hidden" />
 
@@ -215,7 +215,7 @@ export function ApiProfileEditorModal({
             <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-zinc-400">
               Model
             </label>
-            <div className="flex items-stretch gap-2">
+            <div className="flex flex-col items-stretch gap-2 sm:flex-row">
               <div className="min-w-0 flex-1">
                 {models.length > 0 ? (
                   <div className={`relative overflow-hidden ${isSafari ? "rounded-[10px]" : "rounded-[8px]"}`} style={roundedFieldStyle}>
@@ -249,7 +249,7 @@ export function ApiProfileEditorModal({
                 type="button"
                 onClick={() => void loadModels(provider, apiKey)}
                 disabled={modelsLoading}
-                className={`inline-flex h-11 shrink-0 items-center gap-1 bg-zinc-900 px-3 text-sm leading-[1.25] text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 ${isSafari ? "rounded-[10px]" : "rounded-[8px]"}`}
+                className={`inline-flex h-11 w-full shrink-0 items-center justify-center gap-1 bg-zinc-900 px-3 text-sm leading-[1.25] text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto ${isSafari ? "rounded-[10px]" : "rounded-[8px]"}`}
                 style={roundedFieldStyle}
               >
                 {modelsLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
