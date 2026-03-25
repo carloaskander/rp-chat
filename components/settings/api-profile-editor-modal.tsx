@@ -1,6 +1,7 @@
 "use client";
 
 import { CSSProperties, FormEvent, useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, LoaderCircle, X } from "lucide-react";
 
 import { fetchProviderModels } from "@/lib/provider-models";
@@ -61,11 +62,14 @@ export function ApiProfileEditorModal({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSafari, setIsSafari] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     if (typeof navigator === "undefined") {
       return;
     }
+
+    setIsMounted(true);
 
     const ua = navigator.userAgent;
     const safari = /Safari/i.test(ua) && !/Chrome|Chromium|Android/i.test(ua);
@@ -102,7 +106,7 @@ export function ApiProfileEditorModal({
     }
   }, [open]);
 
-  if (!open) {
+  if (!open || !isMounted) {
     return null;
   }
 
@@ -132,7 +136,7 @@ export function ApiProfileEditorModal({
     ? "mt-10 pt-2 flex items-center justify-end gap-2"
     : "mt-8 flex items-center justify-end gap-2";
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <button type="button" aria-label="Close API profile editor" onClick={onCancel} className="absolute inset-0" />
       <form
@@ -276,6 +280,7 @@ export function ApiProfileEditorModal({
         </div>
         {saveError && <p className="mt-3 text-sm text-rose-400">{saveError}</p>}
       </form>
-    </div>
+    </div>,
+    document.body,
   );
 }
