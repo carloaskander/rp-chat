@@ -4,6 +4,7 @@ import { CSSProperties, FormEvent, useCallback, useEffect, useState } from "reac
 import { ChevronDown, LoaderCircle, X } from "lucide-react";
 
 import { fetchProviderModels } from "@/lib/provider-models";
+import { ProviderBrandIcon } from "@/components/ui/provider-brand-icon";
 import { ApiProfile } from "@/types/settings";
 
 interface ApiProfileEditorModalProps {
@@ -33,13 +34,13 @@ const fieldClassName =
   "h-11 w-full rounded-[8px] bg-zinc-900 px-3 text-sm leading-[1.25] text-zinc-100 outline-none placeholder:text-zinc-500";
 
 const selectFieldClassName =
-  "h-11 w-full appearance-none rounded-[8px] border-0 bg-zinc-900 px-3 pr-10 text-sm leading-[1.25] text-zinc-100 outline-none ring-0 shadow-none [-webkit-appearance:none]";
+  "h-11 w-full appearance-none rounded-[8px] border-0 bg-zinc-900 pl-11 pr-10 text-sm leading-[1.25] text-zinc-100 outline-none ring-0 shadow-none [-webkit-appearance:none]";
 
 const safariFieldClassName =
   "h-11 w-full rounded-[10px] bg-zinc-900 px-3 text-sm leading-[1.25] text-zinc-100 outline-none placeholder:text-zinc-500";
 
 const safariSelectFieldClassName =
-  "h-11 w-full appearance-none rounded-[10px] border-0 bg-zinc-900 px-3 pr-10 text-sm leading-[1.25] text-zinc-100 outline-none ring-0 shadow-none [-webkit-appearance:none]";
+  "h-11 w-full appearance-none rounded-[10px] border-0 bg-zinc-900 pl-11 pr-10 text-sm leading-[1.25] text-zinc-100 outline-none ring-0 shadow-none [-webkit-appearance:none]";
 
 export function ApiProfileEditorModal({
   open,
@@ -173,6 +174,9 @@ export function ApiProfileEditorModal({
               Provider
             </label>
             <div className={`relative overflow-hidden ${isSafari ? "rounded-[10px]" : "rounded-[8px]"}`} style={roundedFieldStyle}>
+              <span className="pointer-events-none absolute left-3 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center text-zinc-400">
+                <ProviderBrandIcon provider={provider} className="h-3.5 w-3.5" />
+              </span>
               <select
                 value={provider}
                 onChange={(event) => setProvider(event.target.value)}

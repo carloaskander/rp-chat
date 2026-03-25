@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { ReactNode } from "react";
 import { Check, Plus, X } from "lucide-react";
 
 interface SelectorOption {
   id: string;
   label: string;
   description?: string;
+  icon?: ReactNode;
 }
 
 export interface SelectorAnchorRect {
@@ -164,11 +166,18 @@ export function ChatOptionSelectorModal({
                         : "border-zinc-800 bg-zinc-950/70 text-zinc-300 hover:border-zinc-700 hover:bg-zinc-900"
                     }`}
                   >
-                    <div className="min-w-0 pr-3">
-                      <p className="truncate text-sm font-medium">{option.label}</p>
-                      {option.description && (
-                        <p className="mt-0.5 truncate text-xs text-zinc-500">{option.description}</p>
-                      )}
+                    <div className="flex min-w-0 flex-1 items-center gap-2.5 pr-3">
+                      {option.icon ? (
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-zinc-900 text-zinc-200">
+                          {option.icon}
+                        </span>
+                      ) : null}
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{option.label}</p>
+                        {option.description && (
+                          <p className="mt-0.5 truncate text-xs text-zinc-500">{option.description}</p>
+                        )}
+                      </div>
                     </div>
                     {isSelected && <Check className="h-4 w-4 shrink-0 text-zinc-200" />}
                   </button>

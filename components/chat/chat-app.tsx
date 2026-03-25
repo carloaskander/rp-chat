@@ -22,6 +22,7 @@ import { ChatOptionSelectorModal, SelectorAnchorRect } from "./chat-option-selec
 import { ChatPanel } from "./chat-panel";
 import { InstructionPresetSelector } from "./instruction-preset-selector";
 import { Sidebar } from "./sidebar";
+import { ProviderBrandIcon } from "../ui/provider-brand-icon";
 
 const MESSAGE_PAGE_SIZE = 50;
 
@@ -1521,6 +1522,7 @@ export function ChatApp() {
           id: profile.id,
           label: profile.name,
           description: [profile.provider, profile.model].filter(Boolean).join(" · "),
+          icon: <ProviderBrandIcon provider={profile.provider} className="h-3.5 w-3.5" />,
         }))}
         emptyStateTitle="No API profiles yet."
         emptyStateDescription="Create an API profile in settings to start chatting with this conversation."
