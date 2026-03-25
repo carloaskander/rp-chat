@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Provider is required." }, { status: 400 });
     }
 
-    const keyLookupClient = supabase as UserApiKeyLookupClient;
+    const keyLookupClient = supabase as unknown as UserApiKeyLookupClient;
 
     const { apiKey, error: apiKeyError } = await getUserProviderApiKey({
       supabase: keyLookupClient,
