@@ -1,6 +1,12 @@
-﻿import { ChatApp } from "@/components/chat/chat-app";
+import { Suspense } from "react";
+
+import { ChatApp } from "@/components/chat/chat-app";
 
 export default function HomePage() {
-  return <ChatApp />;
+  return (
+    <Suspense fallback={null}>
+      <ChatApp />
+    </Suspense>
+  );
 }
 
